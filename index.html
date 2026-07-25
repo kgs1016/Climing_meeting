@@ -65,6 +65,22 @@
   .cta-note{text-align:center;font-size:13px;color:var(--muted);margin-top:10px}
   .cta-note b{color:var(--mint);font-weight:600}
 
+  .cost{
+    margin-top:22px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px;
+  }
+  .cost-title{font-size:14px;font-weight:700;margin-bottom:12px}
+  .cost ul{list-style:none}
+  .cost li{
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line);
+  }
+  .cost li:last-child{border-bottom:none}
+  .cost li span{color:var(--muted);flex-shrink:0}
+  .cost li b{font-weight:600;text-align:right}
+  .cost li b.free{color:var(--mint);font-weight:800}
+  .cost-note{font-size:12.5px;color:var(--muted);margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+
   /* ── Section base ── */
   section{padding:44px 0;border-top:1px solid var(--line)}
   .eyebrow{font-size:13px;font-weight:700;color:var(--accent-soft);letter-spacing:1.5px;margin-bottom:10px}
@@ -170,6 +186,17 @@
     </p>
     <a class="cta" href="#" data-apply>시즌 1 참가 신청하기</a>
     <p class="cta-note"><b>참가비 무료</b> · 보증금 1만원은 참석하면 전액 환급</p>
+
+    <div class="cost">
+      <p class="cost-title">💰 비용은 이게 전부예요</p>
+      <ul>
+        <li><span>호비데이 참가비</span><b class="free">0원</b></li>
+        <li><span>암장 일일권 + 신발 대여</span><b>2만원 내외 · 현장 각자 결제</b></li>
+        <li><span>저녁 식사</span><b>각자 먹은 만큼</b></li>
+        <li><span>노쇼 방지 보증금</span><b>1만원 · 참석 시 전액 환급</b></li>
+      </ul>
+      <p class="cost-note">주선비는 받지 않아요. 암장과 식사는 각자 결제합니다.</p>
+    </div>
   </header>
 
   <!-- PAIN -->
@@ -289,7 +316,7 @@
     </details>
     <details>
       <summary>정말 무료인가요?</summary>
-      <p>참가비는 무료예요. 노쇼 방지를 위한 <b>보증금 1만원</b>만 받고, 당일 참석하시면 <b>전액 환급</b>됩니다. 암장 입장료와 식사비는 각자 부담이에요.</p>
+      <p><b>호비데이가 받는 주선비는 0원</b>이에요. 다만 <b>암장 일일권(2만원 내외)</b>과 <b>저녁 식사비</b>는 현장에서 각자 결제하셔야 해요. 노쇼 방지용 <b>보증금 1만원</b>은 참석하시면 전액 환급됩니다.</p>
     </details>
     <details>
       <summary>어디서 진행되나요?</summary>

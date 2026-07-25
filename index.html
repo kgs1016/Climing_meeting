@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>클밋 — 클라이밍 3:3 소개팅</title>
-<meta name="description" content="진짜 클라이머들의 3:3 소개팅. 같은 벽 앞에서 자연스럽게 만나요. 참가비 무료.">
-<meta property="og:title" content="클밋 — 클라이밍 3:3 소개팅">
-<meta property="og:description" content="소개팅은 부담스럽고, 클라이밍은 좋아하는 당신에게. 참가비 무료.">
+<title>호비데이 HOBIDAY — 클라이밍 3:3 소개팅</title>
+<meta name="description" content="취미로 시작해서, 사람으로 끝나는 하루. 진짜 클라이머들의 3:3 소개팅. 참가비 무료.">
+<meta property="og:title" content="호비데이 HOBIDAY — 클라이밍 3:3 소개팅">
+<meta property="og:description" content="취미로 시작해서, 사람으로 끝나는 하루. 소개팅은 부담스럽고 클라이밍은 좋아하는 당신에게. 참가비 무료.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
@@ -34,7 +34,12 @@
   .wrap{max-width:480px;margin:0 auto;padding:0 20px}
 
   /* ── Hero ── */
-  header{padding:56px 0 40px;position:relative;overflow:hidden}
+  header{padding:44px 0 40px;position:relative;overflow:hidden}
+  .brand{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:22px;
+    font-size:20px;font-weight:800;letter-spacing:1.5px;color:var(--accent);
+  }
+  .brand span{font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted)}
   .badge{
     display:inline-flex;align-items:center;gap:6px;
     background:var(--surface2);border:1px solid var(--line);
@@ -141,6 +146,11 @@
   .final{padding:52px 0 24px;border-top:1px solid var(--line);text-align:center}
   .final h2{margin-bottom:6px}
   .final .desc{margin-bottom:24px}
+  .brand-note{
+    margin-top:34px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:13px;line-height:1.9;color:var(--muted);
+  }
+  .brand-note b{color:var(--accent);font-weight:800;letter-spacing:1px}
   footer{padding:28px 0 40px;text-align:center;font-size:12px;color:#5f5b55}
   footer a{color:#5f5b55}
 </style>
@@ -151,11 +161,12 @@
 
   <!-- HERO -->
   <header>
-    <span class="badge">시즌 1 · 서울 · 선착순 모집</span>
+    <p class="brand">HOBIDAY<span>호비데이</span></p>
+    <span class="badge">클라이밍 시즌 1 · 연남·홍대 · 선착순 모집</span>
     <h1>클라이밍 하러 갔다가,<br><em>인연</em>을 만났다</h1>
     <p class="sub">
-      진짜 클라이머들의 <b>3:3 소개팅</b>.<br>
-      어색한 카페 말고, <b>같은 벽 앞에서</b> 자연스럽게.
+      취미로 시작해서, 사람으로 끝나는 하루.<br>
+      진짜 클라이머들의 <b>3:3 소개팅</b>.
     </p>
     <a class="cta" href="#" data-apply>시즌 1 참가 신청하기</a>
     <p class="cta-note"><b>참가비 무료</b> · 보증금 1만원은 참석하면 전액 환급</p>
@@ -282,7 +293,7 @@
     </details>
     <details>
       <summary>어디서 진행되나요?</summary>
-      <p>서울 볼더링 짐에서 진행됩니다. 시즌 1 지역은 신청자 분포를 보고 확정되며, 신청서에서 선호 지역을 선택할 수 있어요.</p>
+      <p>시즌 1은 <b>연남·홍대 권역</b> 볼더링 짐에서 진행됩니다. 홍대입구역에서 걸어갈 수 있는 거리이고, 끝나고 저녁 먹기도 좋은 동네예요.</p>
     </details>
     <details>
       <summary>아는 사람을 만나면 어쩌죠?</summary>
@@ -297,10 +308,16 @@
     <p class="desc">시즌 1은 소수 인원으로 진행돼요.<br>신청서 작성은 3분이면 충분합니다.</p>
     <a class="cta" href="#" data-apply>시즌 1 참가 신청하기</a>
     <p class="cta-note"><b>참가비 무료</b> · 신청 마감 시 대기명단으로 안내</p>
+
+    <p class="brand-note">
+      <b>HOBIDAY</b>는 Hobby + Holiday.<br>
+      취미가 곧 휴일이 되는 하루를 만듭니다.<br>
+      클라이밍을 시작으로 더 많은 취미로 넓혀갈 거예요.
+    </p>
   </div>
 
   <footer>
-    ⓒ 2026 Climing Meeting · 문의: <a href="mailto:1212ntnt@naver.com">1212ntnt@naver.com</a>
+    ⓒ 2026 HOBIDAY 호비데이 · 문의: <a href="mailto:1212ntnt@naver.com">1212ntnt@naver.com</a>
   </footer>
 
 </div>

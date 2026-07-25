@@ -307,10 +307,12 @@
 
 <script>
   // ⚙️ 여기만 바꾸면 됩니다: 구글폼/탈리 신청서 링크
-  const APPLY_URL = "https://forms.gle/YOUR_FORM_ID";
+  const APPLY_URL = "https://docs.google.com/forms/d/e/1FAIpQLScNpwIjPXRkry0uqjsN-HuDZSKdEZZ01S22oIBOo5Aw6hL5tQ/viewform";
 
   document.querySelectorAll("[data-apply]").forEach(function(btn){
     btn.href = APPLY_URL;
+    btn.target = "_blank";
+    btn.rel = "noopener";
     btn.addEventListener("click", function(){
       // 전환 측정: GA4 등 붙이면 여기서 이벤트 전송
       // gtag('event', 'apply_click');

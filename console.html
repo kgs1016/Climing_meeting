@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>호비데이 운영 콘솔</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#f6f5f3; --panel:#fff; --line:#e2ded8; --text:#1c1a18; --muted:#8a837a;
+    --accent:#e04a35; --accent-bg:#fdeeeb; --mint:#1f8f70; --mint-bg:#e9f6f1;
+    --male:#3b6fd4; --female:#c8447f;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:"Pretendard Variable",Pretendard,-apple-system,system-ui,sans-serif;
+       background:var(--bg);color:var(--text);line-height:1.55;padding:22px 16px 80px}
+  .wrap{max-width:1000px;margin:0 auto}
+
+  .brand{font-size:14px;font-weight:800;color:var(--accent);letter-spacing:1.5px}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.5px;margin:3px 0 18px}
+  h2{font-size:17px;font-weight:800;margin:26px 0 10px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:16px;margin-bottom:14px}
+
+  label.f{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 4px}
+  input,select{font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);
+               border-radius:8px;background:#fff;color:var(--text);width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--accent)}
+  .rowf{display:flex;gap:9px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
+  .rowf > div{flex:1;min-width:110px}
+
+  button{font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;
+         border:1px solid var(--line);background:#fff;color:var(--text);
+         padding:9px 15px;border-radius:9px;white-space:nowrap}
+  button:hover{border-color:var(--muted)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  button.sm{font-size:12.5px;padding:6px 11px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--line)}
+  th{font-size:12px;color:var(--muted);font-weight:700}
+  .pill{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff}
+  .pill.m{background:var(--male)} .pill.f{background:var(--female)}
+  .ok{color:var(--mint);font-weight:700} .no{color:var(--muted)}
+  .link{font-family:ui-monospace,monospace;font-size:11.5px;color:var(--muted);
+        max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+
+  .stage{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .stage button.on{background:var(--mint);border-color:var(--mint);color:#fff}
+
+  .match{background:var(--accent-bg);border:1px solid #f6d6cf;border-radius:10px;
+         padding:11px 14px;margin-bottom:8px;font-size:14px}
+  .match b{font-weight:800}
+  .muted{color:var(--muted);font-size:13.5px}
+  .warn{background:#fff8e8;border:1px solid #f0e2c0;border-radius:10px;
+        padding:12px 14px;font-size:13px;color:#6b5518;margin-bottom:14px}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--mint);
+         color:#fff;font-size:14px;font-weight:700;padding:11px 20px;border-radius:999px;
+         opacity:0;transition:.25s;pointer-events:none;z-index:9}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="brand">HOBIDAY</p>
+  <h1>운영 콘솔</h1>
+  <div id="root"><p class="muted">불러오는 중…</p></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="hobiday-core.js"></script>
+<script>
+const H = window.HOBIDAY, esc = H.esc;
+let sb, KEY = localStorage.getItem('hobiday.adminKey') || '';
+let events = [], cur = null, parts = [];
+
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m;
+  t.classList.add('on'); setTimeout(()=>t.classList.remove('on'),2000); }
+function R(h){ document.getElementById('root').innerHTML = h; }
+
+async function rpc(fn,args){
+  const {data,error} = await sb.rpc(fn,args);
+  if(error){ console.error(fn,error); toast('요청 실패 — 콘솔 확인'); return null; }
+  if(data && data.error === 'unauthorized'){ toast('운영자 키가 틀렸어요'); return null; }
+  return data;
+}
+
+/* ─────────── 부팅 ─────────── */
+function boot(){
+  if(!window.HOBIDAY_CONFIG || HOBIDAY_CONFIG.url.includes('YOUR_')){
+    return R(`<div class="panel"><h2>설정이 필요해요</h2>
+      <p class="muted"><code>config.js</code>에 Supabase 주소와 anon 키를 넣어주세요. (SETUP.md 참고)</p></div>`);
+  }
+  sb = supabase.createClient(HOBIDAY_CONFIG.url, HOBIDAY_CONFIG.anonKey);
+  KEY ? loadEvents() : askKey();
+}
+
+function askKey(){
+  R(`<div class="panel" style="max-width:420px">
+    <label class="f">운영자 키 (schema.sql의 admin_key)</label>
+    <input id="k" type="password" placeholder="admin_key 입력" onkeydown="if(event.key==='Enter')setKey()">
+    <div style="margin-top:10px"><button class="primary" onclick="setKey()">들어가기</button></div>
+  </div>`);
+}
+function setKey(){
+  KEY = document.getElementById('k').value.trim();
+  localStorage.setItem('hobiday.adminKey', KEY);
+  loadEvents();
+}
+
+/* ─────────── 이벤트 목록 ─────────── */
+async function loadEvents(){
+  const d = await rpc('admin_events',{p_key:KEY});
+  if(!d) return askKey();
+  events = d.events || [];
+  cur = null; renderEvents();
+}
+
+function renderEvents(){
+  R(`
+  <div class="bar">
+    <button onclick="loadEvents()">새로고침</button>
+    <button onclick="logout()">키 변경</button>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">새 이벤트</h2>
+    <div class="rowf">
+      <div><label class="f">제목</label><input id="et" placeholder="호비데이 클라이밍 시즌1"></div>
+      <div><label class="f">날짜</label><input id="ed" type="date"></div>
+      <div><label class="f">장소</label><input id="eg" placeholder="더클라임 B홍대"></div>
+      <div style="flex:0"><button class="primary" onclick="createEvent()">만들기</button></div>
+    </div>
+  </div>
+
+  <h2>이벤트</h2>
+  ${events.length ? `<table>
+    <tr><th>제목</th><th>날짜</th><th>장소</th><th>인원</th><th>설문</th><th></th></tr>
+    ${events.map(e=>`<tr>
+      <td><b>${esc(e.title)}</b></td><td>${esc(e.date||'—')}</td><td>${esc(e.gym||'—')}</td>
+      <td>${e.n}/6</td><td>${e.done}/${e.n}</td>
+      <td style="text-align:right"><button class="sm" onclick="openEvent('${e.id}')">관리</button></td>
+    </tr>`).join('')}</table>` : `<p class="muted">아직 이벤트가 없어요.</p>`}
+  `);
+}
+
+async function createEvent(){
+  const t = document.getElementById('et').value.trim();
+  if(!t) return toast('제목을 입력해주세요');
+  const d = await rpc('admin_create_event',{p_key:KEY, p_title:t,
+    p_date: document.getElementById('ed').value || null,
+    p_gym:  document.getElementById('eg').value.trim() || null});
+  if(d && d.id){ toast('만들었어요'); await loadEvents(); openEvent(d.id); }
+}
+function logout(){ localStorage.removeItem('hobiday.adminKey'); KEY=''; askKey(); }
+
+/* ─────────── 이벤트 상세 ─────────── */
+async function openEvent(id){
+  cur = events.find(e=>e.id===id) || {id};
+  const d = await rpc('admin_participants',{p_key:KEY, p_event:id});
+  parts = (d && d.participants) || [];
+  renderEvent();
+}
+
+function slotRows(){
+  const rows = [];
+  ['m','f'].forEach(g=>[0,1,2].forEach(s=>{
+    const p = parts.find(x=>x.gender===g && x.slot===s) || {};
+    rows.push({g,s,p});
+  }));
+  return rows;
+}
+
+function renderEvent(){
+  const base = location.href.replace(/console\.html.*$/,'') + 'app.html?t=';
+  const filled = parts.length, done = parts.filter(p=>p.survey_done).length;
+
+  R(`
+  <div class="bar">
+    <button onclick="loadEvents()">← 목록</button>
+    <button onclick="openEvent('${cur.id}')">새로고침</button>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">${esc(cur.title||'이벤트')}</h2>
+    <p class="muted">${esc(cur.date||'')} ${esc(cur.gym||'')} · 참가자 ${filled}/6 · 설문 완료 ${done}/${filled}</p>
+  </div>
+
+  <div class="panel">
+    <h2 style="margin-top:0">진행 단계</h2>
+    <p class="muted" style="margin-bottom:10px">
+      라운드를 열면 참가자 앱에 해당 라운드 카드가 나타나요. 휴식 시간마다 하나씩 여세요.</p>
+    <div class="stage">
+      ${[0,1,2,3].map(n=>`<button class="sm ${(cur.open_rounds||0)===n?'on':''}"
+        onclick="setStage(${n}, ${!!cur.selection_open}, ${!!cur.results_open})">
+        ${n===0?'카드 비공개':'라운드 '+(n+1)+'까지 공개'}</button>`).join('')}
+      <span style="width:12px"></span>
+      <button class="sm ${cur.selection_open?'on':''}"
+        onclick="setStage(${cur.open_rounds||0}, ${!cur.selection_open}, ${!!cur.results_open})">
+        최종선택 ${cur.selection_open?'열림':'닫힘'}</button>
+      <button class="sm ${cur.results_open?'on':''}"
+        onclick="setStage(${cur.open_rounds||0}, ${!!cur.selection_open}, ${!cur.results_open})">
+        결과 ${cur.results_open?'공개':'비공개'}</button>
+    </div>
+    ${cur.results_open ? '' : `<p class="muted" style="margin-top:10px">
+      ⚠️ 결과 공개는 <b>모두 선택을 제출한 뒤</b> 켜세요. 상호 매칭된 쌍에게만 연락처가 열립니다.</p>`}
+  </div>
+
+  <h2>참가자 (남 3 · 여 3)</h2>
+  <div class="warn">참가자를 추가하면 <b>개인 링크</b>가 발급돼요. 이 링크를 각자에게 카톡으로 보내세요.
+    링크 하나에 한 사람만 대응하니 섞이지 않게 주의하세요.</div>
+
+  <table>
+    <tr><th>슬롯</th><th>이름</th><th>나이대</th><th>실력</th><th>홈짐</th><th>연락처</th><th>설문</th><th>개인 링크</th></tr>
+    ${slotRows().map(({g,s,p})=>`<tr>
+      <td><span class="pill ${g}">${g==='m'?'남':'여'} ${s+1}</span></td>
+      <td><input id="n_${g}${s}" value="${esc(p.name||'')}" placeholder="이름"></td>
+      <td><select id="a_${g}${s}"><option value="">—</option>
+        ${['20~24','25~29','30~34','35~39'].map(o=>`<option ${p.age===o?'selected':''}>${o}</option>`).join('')}</select></td>
+      <td><select id="l_${g}${s}"><option value="">—</option>
+        ${H.LEVELS.map(o=>`<option ${p.level===o?'selected':''}>${o}</option>`).join('')}</select></td>
+      <td><input id="h_${g}${s}" value="${esc(p.home_gym||'')}" placeholder="홈짐"></td>
+      <td><input id="c_${g}${s}" value="${esc(p.contact||'')}" placeholder="번호/인스타"></td>
+      <td>${p.survey_done?'<span class="ok">완료</span>':'<span class="no">대기</span>'}</td>
+      <td>${p.token
+            ? `<span class="link">${esc(base+p.token)}</span>
+               <button class="sm" onclick="copy('${esc(base+p.token)}')">복사</button>`
+            : `<button class="sm primary" onclick="addP('${g}',${s})">추가</button>`}</td>
+    </tr>`).join('')}
+  </table>
+  <div class="bar" style="margin-top:12px">
+    <button onclick="saveAll()">입력한 참가자 모두 저장/추가</button>
+    <button onclick="preview()">카드 미리보기</button>
+  </div>
+
+  <div id="preview"></div>
+  <h2>매칭 결과</h2>
+  <div id="results"><button class="sm" onclick="loadResults()">결과 불러오기</button></div>
+  `);
+}
+
+function val(id){ const e=document.getElementById(id); return e ? e.value.trim() : ''; }
+
+async function addP(g,s){
+  const name = val(`n_${g}${s}`);
+  if(!name) return toast('이름을 입력해주세요');
+  const d = await rpc('admin_add_participant',{
+    p_key:KEY, p_event:cur.id, p_name:name, p_gender:g, p_slot:s,
+    p_age:val(`a_${g}${s}`)||null, p_level:val(`l_${g}${s}`)||null,
+    p_home_gym:val(`h_${g}${s}`)||null, p_contact:val(`c_${g}${s}`)||null});
+  if(d && d.token){ toast('추가했어요'); openEvent(cur.id); }
+}
+async function saveAll(){
+  for(const {g,s} of slotRows()){
+    if(val(`n_${g}${s}`)) await addP(g,s);
+  }
+}
+function copy(t){ navigator.clipboard.writeText(t).then(()=>toast('링크를 복사했어요')); }
+
+/* 카드 미리보기 — 참가자에게 보이는 것과 동일한 로직 */
+function preview(){
+  const M = [0,1,2].map(s=>parts.find(p=>p.gender==='m'&&p.slot===s));
+  const F = [0,1,2].map(s=>parts.find(p=>p.gender==='f'&&p.slot===s));
+  if(M.some(x=>!x) || F.some(x=>!x)) return toast('참가자 6명을 먼저 등록해주세요');
+
+  document.getElementById('preview').innerHTML = '<h2>카드 미리보기</h2>' +
+    [1,2,3].map(r=>{
+      const cards = [0,1,2].flatMap(i=>{
+        const m = M[i], f = F[H.partnerSlot('m',i,r)];
+        const mission = H.missionText(m.level, f.level);
+        return [[m,f],[f,m]].map(([me,you])=>`
+          <div class="panel" style="margin-bottom:10px">
+            <p class="muted" style="margin-bottom:8px"><b>${esc(me.name)}</b> → ${esc(you.name)}</p>
+            ${H.cardHTML(H.buildCard(me.survey||{}, you.survey||{}), {mission})}
+          </div>`);
+      }).join('');
+      return `<h2>라운드 ${r+1}</h2>${cards}`;
+    }).join('');
+  document.getElementById('preview').scrollIntoView({behavior:'smooth'});
+}
+
+async function setStage(rounds, sel, res){
+  const d = await rpc('admin_set_stage',{p_key:KEY, p_event:cur.id,
+    p_open_rounds:rounds, p_selection:sel, p_results:res});
+  if(d && d.ok){
+    Object.assign(cur,{open_rounds:rounds, selection_open:sel, results_open:res});
+    toast('반영했어요'); renderEvent();
+  }
+}
+
+async function loadResults(){
+  const d = await rpc('admin_results',{p_key:KEY, p_event:cur.id});
+  if(!d) return;
+  const m = d.matches || [], sub = d.submitted || [];
+  document.getElementById('results').innerHTML = `
+    <p class="muted" style="margin-bottom:10px">선택 제출: ${sub.length}명 ${sub.length?'('+sub.map(esc).join(', ')+')':''}</p>
+    ${m.length
+      ? m.map(x=>`<div class="match">💘 <b>${esc(x.a)}</b> ↔ <b>${esc(x.b)}</b>
+          <span class="muted">· ${esc(x.a_contact||'—')} / ${esc(x.b_contact||'—')}</span></div>`).join('')
+      : '<p class="muted">아직 상호 매칭된 쌍이 없어요.</p>'}
+    <button class="sm" style="margin-top:8px" onclick="loadResults()">다시 불러오기</button>`;
+}
+
+/* 미리보기 카드용 최소 스타일 (참가자 앱과 동일 클래스) */
+const s = document.createElement('style');
+s.textContent = `
+  .row{display:flex;align-items:flex-start;gap:8px;font-size:13.5px;padding:7px 10px;
+       border-radius:8px;margin-bottom:6px;background:#faf9f7}
+  .row .tag{flex-shrink:0;font-size:10.5px;font-weight:800;padding:2px 7px;border-radius:5px;margin-top:2px}
+  .row.t1{background:var(--accent-bg);border:1px solid #f6d6cf}
+  .row.t1 .tag{background:var(--accent);color:#fff}
+  .row.t2 .tag{background:#fff;color:var(--mint);border:1px solid var(--line)}
+  .row.t3 .tag{background:#fff;color:var(--muted);border:1px solid var(--line)}
+  .quote{border-left:3px solid var(--mint);background:var(--mint-bg);padding:8px 11px;
+         border-radius:0 8px 8px 0;margin-top:9px;font-size:13px}
+  .quote small{display:block;color:var(--mint);font-size:11px;font-weight:700;margin-bottom:1px}
+  .seed{margin-top:9px;padding:10px 12px;border-radius:8px;font-size:13.5px;
+        background:#fff8e8;border:1px solid #f0e2c0}
+  .seed small{display:block;color:#a07a1e;font-size:11px;font-weight:800;margin-bottom:1px}
+  .mission{margin-top:9px;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;
+           background:#eef3fb;border:1px solid #d5e0f2;color:#2c4c88}
+  .empty{color:var(--muted);font-size:13.5px;padding:10px;text-align:center}`;
+document.head.appendChild(s);
+
+boot();
+</script>
+</body>
+</html>

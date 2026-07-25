@@ -3,7 +3,7 @@
 > **취미로 시작해서, 사람으로 끝나는 하루** — 취미 기반 3:3 남녀 소그룹 소개팅 서비스
 > 첫 카테고리는 **클라이밍(볼더링)**, 이후 다른 취미로 확장
 
-🔗 [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) · [운영 콘솔](https://kgs1016.github.io/Climing_meeting/admin.html) · [운영 매뉴얼](OPERATIONS.md)
+🔗 [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) · [운영 콘솔](https://kgs1016.github.io/Climing_meeting/admin.html) · [운영 매뉴얼](OPERATIONS.md) · [2차 설문 문항](SURVEY.md)
 
 ---
 

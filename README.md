@@ -1,9 +1,14 @@
 # HOBIDAY 호비데이 🧗💘
 
-> **취미로 시작해서, 사람으로 끝나는 하루** — 취미 기반 3:3 남녀 소그룹 소개팅 서비스
+> **취미로 시작해서, 사람으로 끝나는 하루** — 볼더링 세션에서 만나는 상시 매칭 앱
 > 첫 카테고리는 **클라이밍(볼더링)**, 이후 다른 취미로 확장
 
-🔗 [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) · [카드 생성기](https://kgs1016.github.io/Climing_meeting/admin.html) · [운영 매뉴얼](OPERATIONS.md) · [2차 설문 문항](SURVEY.md)
+🔗 [**제품 명세 (현재 기준)**](PRODUCT.md) · [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) · [카드 생성기](https://kgs1016.github.io/Climing_meeting/admin.html)
+
+> ⚠️ **2026-07 방향 전환**
+> 외부 피드백 검토 결과 "3:3 반나절 풀코스 이벤트"는 **진입 조건이 곱해져 이용자 pool이 수십 명 수준으로 줄어드는** 구조적 문제가 확인됐습니다.
+> **1.5~2시간 세션 · 2:2 또는 3:3 · 유저가 직접 개설**하는 상시 매칭 모델로 전환했습니다. 자세한 내용은 [PRODUCT.md](PRODUCT.md).
+> [OPERATIONS.md](OPERATIONS.md) · [SURVEY.md](SURVEY.md) · `admin.html`은 이전 모델 기준이라 **일부 어긋납니다** (특히 레벨이 3단계 → 5단계로 변경됨).
 
 ---
 
@@ -195,9 +200,10 @@ Tier 3 — 흥미로운 차이 (궁금 포인트)   "나: 근성형 vs 상대: �
 | 단계 | 산출물 | 상태 |
 |---|---|---|
 | 수요 검증 | [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) + 구글폼 신청서 | ✅ 배포 |
-| 첫 이벤트 실행 | [운영 매뉴얼](OPERATIONS.md) · [2차 설문 문항](SURVEY.md) | ✅ 작성 |
-| **카드 생성기** | [admin.html](https://kgs1016.github.io/Climing_meeting/admin.html) — 서버 없이 로컬에서 카드를 뽑는 운영자 도구 | ✅ 동작 |
-| 참가자 앱 | 피드백 반영해 재설계 예정 | ⏸ 보류 |
+| **제품 설계** | [**PRODUCT.md**](PRODUCT.md) — 화면 구조 9개 + 기능 목록 + 데이터 모델 | ✅ 확정 |
+| 카드 생성기 | [admin.html](https://kgs1016.github.io/Climing_meeting/admin.html) — 로컬 운영자 도구 | ⚠️ 레벨 3단계 기준(구버전) |
+| 운영 매뉴얼 · 설문 | [OPERATIONS.md](OPERATIONS.md) · [SURVEY.md](SURVEY.md) | ⚠️ 이전 이벤트 모델 기준 |
+| 앱 개발 | 기술 스택 미정 | ⬜ 대기 |
 
 **카드 생성기(admin.html)가 하는 일**
 - 남3·여3 설문 입력 → 라운드 로빈으로 **9쌍 전부 중복 없이** 페어링 (R2·R3·R4)

@@ -7,7 +7,14 @@ import {
   loadMyProfile,
   saveMyProfile,
   removeMyProfile,
+  type MyProfile,
 } from "@/lib/myProfile";
+import {
+  hasSupabase,
+  currentUser,
+  fetchMyProfileDb,
+  upsertMyProfileDb,
+} from "@/lib/supabase";
 
 const MBTI = [
   "ISTJ", "ISFJ", "INFJ", "INTJ", "ISTP", "ISFP", "INFP", "INTP",
@@ -63,21 +70,37 @@ export default function ProfileNew() {
   const [mbti, setMbti] = useState("");
   const [intro, setIntro] = useState("");
 
+  const [busy, setBusy] = useState(false);
+
   useEffect(() => {
-    const p = loadMyProfile();
-    if (!p) return;
-    setEditing(true);
-    setNickname(p.nickname);
-    setGender(p.gender);
-    setAge(String(p.age));
-    setArea(p.area);
-    setLevel(p.level);
-    setHomeGym(p.homeGym);
-    setMbti(p.mbti);
-    setIntro(p.intro ?? "");
+    (async () => {
+      let p: MyProfile | null = null;
+      if (hasSupabase()) {
+        const user = await currentUser();
+        if (!user) {
+          alert("프로필을 만들려면 로그인이 필요해요");
+          router.replace("/login");
+          return;
+        }
+        p = await fetchMyProfileDb();
+      } else {
+        p = loadMyProfile();
+      }
+      if (!p) return;
+      setEditing(true);
+      setNickname(p.nickname);
+      setGender(p.gender);
+      setAge(String(p.age));
+      setArea(p.area);
+      setLevel(p.level);
+      setHomeGym(p.homeGym);
+      setMbti(p.mbti);
+      setIntro(p.intro ?? "");
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const n = Number(age);
     if (!nickname.trim()) return alert("닉네임을 입력해주세요");
@@ -86,7 +109,7 @@ export default function ProfileNew() {
     if (!homeGym.trim()) return alert("홈짐을 입력해주세요");
     if (!mbti) return alert("MBTI를 선택해주세요");
 
-    saveMyProfile({
+    const profile: MyProfile = {
       nickname: nickname.trim(),
       gender,
       age: n,
@@ -95,13 +118,42 @@ export default function ProfileNew() {
       homeGym: homeGym.trim(),
       mbti,
       intro: intro.trim() || undefined,
-    });
+    };
+
+    if (hasSupabase()) {
+      setBusy(true);
+      const r = await upsertMyProfileDb(profile, true);
+      setBusy(false);
+      if (r.error) return alert(`저장 실패: ${r.error}`);
+    } else {
+      saveMyProfile(profile);
+    }
     router.push("/#people");
   };
 
-  const takeDown = () => {
+  const takeDown = async () => {
     if (!confirm("사람 찾기 목록에서 내 프로필을 내릴까요?")) return;
-    removeMyProfile();
+    if (hasSupabase()) {
+      // 삭제가 아니라 비공개 전환 — 모임 참여용 기본 정보는 유지
+      const n = Number(age);
+      setBusy(true);
+      await upsertMyProfileDb(
+        {
+          nickname: nickname.trim(),
+          gender,
+          age: n,
+          area: area.trim(),
+          level,
+          homeGym: homeGym.trim(),
+          mbti,
+          intro: intro.trim() || undefined,
+        },
+        false
+      );
+      setBusy(false);
+    } else {
+      removeMyProfile();
+    }
     router.push("/#people");
   };
 
@@ -215,9 +267,10 @@ export default function ProfileNew() {
 
         <button
           type="submit"
-          className="rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white"
+          disabled={busy}
+          className="rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white disabled:opacity-50"
         >
-          {editing ? "수정 완료" : "프로필 올리기"}
+          {busy ? "저장 중…" : editing ? "수정 완료" : "프로필 올리기"}
         </button>
 
         {editing && (

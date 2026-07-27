@@ -1,9 +1,19 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { levelRangeLabel, missionLevel } from "@/lib/levels";
-import { MOCK_SESSIONS, slotsLeft } from "@/lib/mock";
+import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
+import {
+  hasSupabase,
+  currentUser,
+  fetchSessions,
+  fetchMyProfileDb,
+  joinSession,
+  toSession,
+} from "@/lib/supabase";
+
+type S = Session & { myStatus?: string | null };
 
 export default function SessionDetail({
   params,
@@ -12,25 +22,78 @@ export default function SessionDetail({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const s = MOCK_SESSIONS.find((x) => x.id === id);
+  const [s, setS] = useState<S | null | undefined>(undefined);
+  const [busy, setBusy] = useState(false);
 
-  if (!s) {
+  const load = async () => {
+    if (!hasSupabase()) {
+      setS(MOCK_SESSIONS.find((x) => x.id === id) ?? null);
+      return;
+    }
+    const rows = await fetchSessions();
+    const row = rows?.find((r) => r.id === id);
+    setS(row ? toSession(row) : null);
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  if (s === undefined)
+    return <main className="px-4 pt-20 text-center text-muted">불러오는 중…</main>;
+  if (s === null)
     return (
       <main className="px-4 pt-20 text-center text-muted">
-        세션을 찾을 수 없어요
+        모임을 찾을 수 없어요
       </main>
     );
-  }
 
   const left = slotsLeft(s);
   const full = left.male <= 0 && left.female <= 0;
   const mission = missionLevel(s.levelMin, s.levelMax);
+  const joined = s.myStatus === "confirmed" || s.myStatus === "waiting";
 
-  // 참가 현황 익명 배지 (블라인드 정책 — 프로필 미노출)
   const badges = [
     ...Array.from({ length: s.maleJoined }, (_, i) => ({ g: "m", key: `m${i}` })),
     ...Array.from({ length: s.femaleJoined }, (_, i) => ({ g: "f", key: `f${i}` })),
   ];
+
+  const onJoin = async () => {
+    if (!hasSupabase()) {
+      alert(
+        full
+          ? "대기 신청했어요. 자리가 나면 순서대로 알려드릴게요. (목데이터 단계)"
+          : "모임 신청 완료! 성비가 맞으면 확정 알림을 보내드려요. (목데이터 단계)"
+      );
+      return;
+    }
+    setBusy(true);
+    const user = await currentUser();
+    if (!user) {
+      setBusy(false);
+      alert("신청하려면 로그인이 필요해요");
+      router.push("/login");
+      return;
+    }
+    const profile = await fetchMyProfileDb();
+    if (!profile) {
+      setBusy(false);
+      alert("먼저 프로필을 만들어주세요 (성비 매칭의 기본 정보예요)");
+      router.push("/profile/new");
+      return;
+    }
+    const r = await joinSession(s.id);
+    setBusy(false);
+    if (r.error === "is_host") return alert("내가 연 모임이에요!");
+    if (r.error) return alert(`신청 실패: ${r.error}`);
+    alert(
+      r.status === "confirmed"
+        ? "확정됐어요! 모임에서 만나요 🧗"
+        : "대기 신청됐어요. 자리가 나면 자동으로 확정돼요."
+    );
+    load();
+  };
 
   return (
     <main className="px-4">
@@ -80,7 +143,7 @@ export default function SessionDetail({
               {b.g === "m" ? "남" : "여"} 확정
             </span>
           ))}
-          {Array.from({ length: left.male }, (_, i) => (
+          {Array.from({ length: Math.max(0, left.male) }, (_, i) => (
             <span
               key={`em${i}`}
               className="rounded-full border border-dashed border-line px-3 py-1.5 text-[12.5px] font-semibold text-muted"
@@ -88,7 +151,7 @@ export default function SessionDetail({
               남 모집중
             </span>
           ))}
-          {Array.from({ length: left.female }, (_, i) => (
+          {Array.from({ length: Math.max(0, left.female) }, (_, i) => (
             <span
               key={`ef${i}`}
               className="rounded-full border border-dashed border-line px-3 py-1.5 text-[12.5px] font-semibold text-muted"
@@ -125,18 +188,25 @@ export default function SessionDetail({
       </section>
 
       <button
-        className={`mt-6 mb-8 w-full rounded-xl py-3.5 text-[15px] font-bold ${
-          full ? "bg-surface2 text-muted" : "bg-accent text-white"
+        disabled={busy || joined}
+        className={`mt-6 mb-8 w-full rounded-xl py-3.5 text-[15px] font-bold disabled:opacity-70 ${
+          joined
+            ? "bg-mint/15 text-mint"
+            : full
+              ? "bg-surface2 text-muted"
+              : "bg-accent text-white"
         }`}
-        onClick={() =>
-          alert(
-            full
-              ? "대기 신청했어요. 자리가 나면 순서대로 알려드릴게요. (목데이터 단계)"
-              : "모임 신청 완료! 성비가 맞으면 확정 알림을 보내드려요. (목데이터 단계)"
-          )
-        }
+        onClick={onJoin}
       >
-        {full ? "대기 신청하기" : "참여 신청하기"}
+        {joined
+          ? s.myStatus === "confirmed"
+            ? "✓ 확정됐어요"
+            : "대기 중 · 자리가 나면 자동 확정"
+          : busy
+            ? "신청 중…"
+            : full
+              ? "대기 신청하기"
+              : "참여 신청하기"}
       </button>
     </main>
   );

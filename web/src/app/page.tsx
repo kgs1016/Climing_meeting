@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import SessionCard from "@/components/SessionCard";
 import { MOCK_SESSIONS, MOCK_PEOPLE } from "@/lib/mock";
 import { level } from "@/lib/levels";
+import { loadMyProfile, type MyProfile } from "@/lib/myProfile";
 
 const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
 
 export default function Home() {
   const [tab, setTab] = useState<"session" | "people">("session");
+  const [me, setMe] = useState<MyProfile | null>(null);
+
+  useEffect(() => {
+    if (window.location.hash === "#people") setTab("people");
+    setMe(loadMyProfile());
+  }, []);
 
   return (
     <main className="px-4">
@@ -25,14 +32,12 @@ export default function Home() {
           >
             + 모임 만들기
           </Link>
-          <button
-            className="rounded-xl border border-line bg-surface py-3 text-[14px] font-bold text-muted"
-            onClick={() =>
-              alert("내 프로필을 '사람 찾기' 목록에 올리는 기능이에요. 다음 업데이트에서 열려요!")
-            }
+          <Link
+            href="/profile/new"
+            className="rounded-xl border border-line bg-surface py-3 text-center text-[14px] font-bold text-muted"
           >
-            + 내 프로필 올리기
-          </button>
+            {me ? "내 프로필 관리" : "+ 내 프로필 올리기"}
+          </Link>
         </div>
       </header>
 
@@ -78,10 +83,56 @@ export default function Home() {
         </>
       ) : (
         <div className="flex flex-col gap-3 py-4 pb-6">
+          {/* 내 프로필 (공개 중) */}
+          {me ? (
+            <div className="rounded-2xl border border-mint/40 bg-mint/5 p-4">
+              <div className="flex items-center gap-3.5">
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl ${
+                    me.gender === "f" ? "bg-female/15" : "bg-male/15"
+                  }`}
+                >
+                  🧗
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-extrabold text-[15px]">
+                    {me.nickname}
+                    <span className="ml-1.5 rounded-full bg-mint/15 px-2 py-0.5 text-[10.5px] font-bold text-mint align-middle">
+                      공개 중
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-[12.5px] text-muted">
+                    {me.age} · {me.area} · L{me.level} {level(me.level).name} ·{" "}
+                    {me.homeGym} · {me.mbti}
+                  </p>
+                  {me.intro && (
+                    <p className="mt-1 text-[12.5px] text-ink/85">
+                      &ldquo;{me.intro}&rdquo;
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href="/profile/new"
+                  className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-muted"
+                >
+                  관리
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/profile/new"
+              className="rounded-xl border border-dashed border-line bg-surface2 px-4 py-3.5 text-center text-[13px] font-semibold text-muted"
+            >
+              + 내 프로필을 올리면 여기에 공개돼요
+            </Link>
+          )}
+
           <p className="rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
             사람 찾기는 프로필이 공개돼요. 신청은{" "}
             <b className="text-ink">신청권</b>을 사용합니다. (MVP 다음 단계)
           </p>
+
           {MOCK_PEOPLE.map((p) => (
             <div
               key={p.id}

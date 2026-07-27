@@ -23,13 +23,15 @@ export default function Home() {
             href="/session/new"
             className="rounded-xl bg-accent py-3 text-center text-[14px] font-bold text-white"
           >
-            + 세션 열기
+            + 모임 만들기
           </Link>
           <button
             className="rounded-xl border border-line bg-surface py-3 text-[14px] font-bold text-muted"
-            onClick={() => setTab("people")}
+            onClick={() =>
+              alert("내 프로필을 '사람 찾기' 목록에 올리는 기능이에요. 다음 업데이트에서 열려요!")
+            }
           >
-            + 사람부터 구할래요
+            + 내 프로필 올리기
           </button>
         </div>
       </header>
@@ -38,7 +40,7 @@ export default function Home() {
       <div className="flex border-b border-line">
         {(
           [
-            ["session", "세션 찾기"],
+            ["session", "모임 찾기"],
             ["people", "사람 찾기"],
           ] as const
         ).map(([key, label]) => (

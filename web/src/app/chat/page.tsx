@@ -8,7 +8,7 @@ export default function Chat() {
         <span className="text-4xl">💬</span>
         <p className="text-[15px] font-bold">아직 매칭된 상대가 없어요</p>
         <p className="text-[13px] leading-relaxed text-muted">
-          세션이 끝나고 서로 선택하면
+          모임이 끝나고 서로 선택하면
           <br />
           여기서 대화가 시작돼요
         </p>

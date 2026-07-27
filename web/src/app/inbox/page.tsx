@@ -40,7 +40,7 @@ export default function Inbox() {
             </div>
             {a.status === "cut" && (
               <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-                이번 세션은 성비 조정으로 다음 순번이 됐어요. 다음 세션 신청 시{" "}
+                이번 모임은 성비 조정으로 다음 순번이 됐어요. 다음 모임 신청 시{" "}
                 <b className="text-ink">우선 확정</b>됩니다.
               </p>
             )}

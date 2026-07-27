@@ -80,7 +80,7 @@ export default function NewSession() {
         <button onClick={() => router.back()} className="text-lg text-muted">
           ←
         </button>
-        <h1 className="text-[19px] font-extrabold tracking-tight">세션 열기</h1>
+        <h1 className="text-[19px] font-extrabold tracking-tight">모임 만들기</h1>
       </header>
 
       <form
@@ -211,7 +211,7 @@ export default function NewSession() {
           type="submit"
           className="rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white"
         >
-          세션 등록하기
+          모임 등록하기
         </button>
       </form>
     </main>

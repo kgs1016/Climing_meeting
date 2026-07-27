@@ -38,7 +38,7 @@ export default function SessionDetail({
         <button onClick={() => router.back()} className="text-lg text-muted">
           ←
         </button>
-        <h1 className="text-[19px] font-extrabold tracking-tight">세션 정보</h1>
+        <h1 className="text-[19px] font-extrabold tracking-tight">모임 정보</h1>
       </header>
 
       <section className="rounded-2xl border border-line bg-surface p-5">
@@ -98,7 +98,7 @@ export default function SessionDetail({
           ))}
         </div>
         <p className="mt-2 text-[12px] text-muted">
-          프로필은 공개되지 않아요. 세션이 시작되면 라운드마다 공통점 카드로 서로를
+          프로필은 공개되지 않아요. 모임이 시작되면 라운드마다 공통점 카드로 서로를
           알아가요.
         </p>
       </section>
@@ -132,7 +132,7 @@ export default function SessionDetail({
           alert(
             full
               ? "대기 신청했어요. 자리가 나면 순서대로 알려드릴게요. (목데이터 단계)"
-              : "신청했어요! 성비가 맞으면 확정 알림을 보내드려요. (목데이터 단계)"
+              : "모임 신청 완료! 성비가 맞으면 확정 알림을 보내드려요. (목데이터 단계)"
           )
         }
       >

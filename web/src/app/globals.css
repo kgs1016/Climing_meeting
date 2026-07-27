@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/* HOBIDAY 브랜드 토큰 — 랜딩페이지와 동일한 다크 팔레트 */
+@theme {
+  --color-bg: #0f0e0d;
+  --color-surface: #1a1917;
+  --color-surface2: #242220;
+  --color-line: #33302c;
+  --color-ink: #f5f2ee;
+  --color-muted: #a09a92;
+  --color-accent: #ff5a45;
+  --color-accent-soft: #ff8a75;
+  --color-mint: #7fd8be;
+  --color-male: #6f9fe8;
+  --color-female: #e87fac;
+}
+
+html {
+  background: var(--color-bg);
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
+    system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}

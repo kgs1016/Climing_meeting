@@ -3,7 +3,7 @@
 > **취미로 시작해서, 사람으로 끝나는 하루** — 볼더링 세션에서 만나는 상시 매칭 앱
 > 첫 카테고리는 **클라이밍(볼더링)**, 이후 다른 취미로 확장
 
-🔗 [**제품 명세 (현재 기준)**](PRODUCT.md) · [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) · [카드 생성기](https://kgs1016.github.io/Climing_meeting/admin.html)
+🔗 [**제품 명세 (현재 기준)**](PRODUCT.md) · [**앱 (배포판)**](https://hobiday-eight.vercel.app) · [랜딩페이지](https://hobiday-eight.vercel.app/intro.html) · [카드 생성기](https://hobiday-eight.vercel.app/admin.html)
 
 > ⚠️ **2026-07 방향 전환**
 > 외부 피드백 검토 결과 "3:3 반나절 풀코스 이벤트"는 **진입 조건이 곱해져 이용자 pool이 수십 명 수준으로 줄어드는** 구조적 문제가 확인됐습니다.
@@ -199,11 +199,11 @@ Tier 3 — 흥미로운 차이 (궁금 포인트)   "나: 근성형 vs 상대: �
 
 | 단계 | 산출물 | 상태 |
 |---|---|---|
-| 수요 검증 | [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) + 구글폼 신청서 | ✅ 배포 |
+| 수요 검증 | [랜딩페이지](https://hobiday-eight.vercel.app/intro.html) + 구글폼 신청서 | ✅ 배포 |
 | **제품 설계** | [**PRODUCT.md**](PRODUCT.md) — 화면 구조 9개 + 기능 목록 + 데이터 모델 | ✅ 확정 |
-| 카드 생성기 | [admin.html](https://kgs1016.github.io/Climing_meeting/admin.html) — 로컬 운영자 도구 | ⚠️ 레벨 3단계 기준(구버전) |
+| **앱 (베타)** | [**hobiday-eight.vercel.app**](https://hobiday-eight.vercel.app) — Next.js + Supabase + Vercel | ✅ 배포 · 테스트 중 |
+| 카드 생성기 | [admin.html](https://hobiday-eight.vercel.app/admin.html) — 오프라인 운영자 도구 | ⚠️ 레벨 3단계 기준(구버전) |
 | 운영 매뉴얼 · 설문 | [OPERATIONS.md](OPERATIONS.md) · [SURVEY.md](SURVEY.md) | ⚠️ 이전 이벤트 모델 기준 |
-| 앱 개발 | 기술 스택 미정 | ⬜ 대기 |
 
 **카드 생성기(admin.html)가 하는 일**
 - 남3·여3 설문 입력 → 라운드 로빈으로 **9쌍 전부 중복 없이** 페어링 (R2·R3·R4)
@@ -260,14 +260,15 @@ Tier 3 — 흥미로운 차이 (궁금 포인트)   "나: 근성형 vs 상대: �
 ## 8. 다음 액션
 
 1. ~~런칭 지역 확정~~ ✅ **연남·홍대**
-2. **수요 검증 진행 중** — [랜딩페이지](https://kgs1016.github.io/Climing_meeting/) + 구글폼 신청서 배포, 신청 전환율 측정
-3. **첫 유저 경로** — 연남·홍대 핵심 짐 5곳 제휴/QR, 클라이밍 인스타 커뮤니티 활용
-4. **MVP 개발** — Must 4개 기능, 모바일 웹 기준
+2. ~~수요 검증 랜딩페이지~~ ✅ [배포](https://hobiday-eight.vercel.app/intro.html)
+3. ~~MVP 앱 개발·배포~~ ✅ [배포](https://hobiday-eight.vercel.app) — 가입·프로필·모임 개설·신청까지 동작
+4. **모임 진행 화면 개발** — 라운드 카드 · 공통점 카드 · 영상 미션 · 비공개 상호선택 (핵심 미구현)
+5. **첫 유저 경로** — 연남·홍대 핵심 짐 5곳 제휴/QR, 클라이밍 인스타 커뮤니티 활용
 
 **검증 지표**
-- 페이지 방문 대비 폼 제출률 (10~15% 이상이면 수요 신호 강함)
-- **여성 신청 비율** ← 3:3 성사의 핵심 병목
-- 성비 맞춘 3:3 성사 여부 / 노쇼율 / 재방문 의향("또 하고 싶다")
+- 랜딩 방문 대비 가입 전환율
+- **여성 가입 비율** ← 성비 매칭 성사의 핵심 병목
+- 성비 맞춘 모임 성사 여부 / 노쇼율 / 재방문 의향("또 하고 싶다")
 
 ### 미정 사항
 - MVP 기술 스택

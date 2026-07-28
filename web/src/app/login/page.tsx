@@ -58,8 +58,13 @@ export default function Login() {
         <p className="mt-1.5 text-[13px] text-muted">
           {step === "email"
             ? "가입/로그인이 한 번에 돼요. 비밀번호는 없어요."
-            : `${email} 로 보낸 6자리 번호를 입력해주세요`}
+            : `${email} 로 메일을 보냈어요`}
         </p>
+        {step === "code" && (
+          <p className="mt-1 text-[12px] text-muted">
+            6자리 번호를 입력하거나, 메일 속 링크를 눌러도 돼요
+          </p>
+        )}
       </header>
 
       {step === "email" ? (

@@ -22,19 +22,21 @@ export default function Me() {
         return;
       }
       const user = await currentUser();
-      if (user) {
-        setEmail(user.email ?? "");
-        setProfile(await fetchMyProfileDb());
+      if (!user) {
+        // 비로그인 상태면 곧바로 로그인 화면으로
+        router.replace("/login");
+        return;
       }
+      setEmail(user.email ?? "");
+      setProfile(await fetchMyProfileDb());
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const logout = async () => {
     await getSupabase()?.auth.signOut();
-    router.refresh();
-    setEmail(null);
-    setProfile(null);
+    router.replace("/login");
   };
 
   if (loading)
@@ -46,16 +48,7 @@ export default function Me() {
         <h1 className="text-[19px] font-extrabold tracking-tight">내 정보</h1>
       </header>
 
-      {/* 로그인 상태 */}
-      {hasSupabase() && !email ? (
-        <Link
-          href="/login"
-          className="block rounded-2xl bg-accent py-3.5 text-center text-[15px] font-bold text-white"
-        >
-          이메일로 시작하기
-        </Link>
-      ) : (
-        <>
+      <>
           <section className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-5">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-2xl">
               🧗
@@ -127,7 +120,6 @@ export default function Me() {
             </button>
           )}
         </>
-      )}
 
       <p className="mt-6 text-center text-[11.5px] text-muted">
         HOBIDAY — 취미로 시작해서, 사람으로 끝나는 하루

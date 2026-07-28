@@ -68,7 +68,7 @@ export default function Inbox() {
             href="/login"
             className="rounded-xl bg-accent px-6 py-2.5 text-[14px] font-bold text-white"
           >
-            이메일로 시작하기
+            로그인 하기
           </Link>
         </div>
       ) : rows === null ? (

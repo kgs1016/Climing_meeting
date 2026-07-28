@@ -25,6 +25,22 @@ export async function currentUser(): Promise<User | null> {
   return data.user ?? null;
 }
 
+/** 대시보드에서 켜둔 소셜 로그인만 화면에 노출하기 위한 조회 */
+export async function enabledOAuthProviders(): Promise<string[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  try {
+    const r = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
+    const j = await r.json();
+    return Object.entries(j.external ?? {})
+      .filter(([k, v]) => v === true && k !== "email" && k !== "phone")
+      .map(([k]) => k);
+  } catch {
+    return [];
+  }
+}
+
 /* ── DB 행 → 화면 타입 변환 ── */
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];

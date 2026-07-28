@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>호비데이 HOBIDAY — 클라이밍 3:3 소개팅</title>
+<meta name="description" content="취미로 시작해서, 사람으로 끝나는 하루. 진짜 클라이머들의 3:3 소개팅. 참가비 무료.">
+<meta property="og:title" content="호비데이 HOBIDAY — 클라이밍 3:3 소개팅">
+<meta property="og:description" content="취미로 시작해서, 사람으로 끝나는 하루. 소개팅은 부담스럽고 클라이밍은 좋아하는 당신에게. 참가비 무료.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  /* ⚙️ 신청 폼 링크는 아래 <script>의 APPLY_URL 한 곳만 바꾸면 됩니다 */
+  :root{
+    --bg:#0f0e0d;
+    --surface:#1a1917;
+    --surface2:#242220;
+    --line:#33302c;
+    --text:#f5f2ee;
+    --muted:#a09a92;
+    --accent:#ff5a45;       /* 클라이밍 홀드 레드 */
+    --accent-soft:#ff8a75;
+    --mint:#7fd8be;         /* 초크/세이지 포인트 */
+    --radius:16px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 20px}
+
+  /* ── Hero ── */
+  header{padding:44px 0 40px;position:relative;overflow:hidden}
+  .brand{
+    display:flex;align-items:baseline;gap:8px;margin-bottom:22px;
+    font-size:20px;font-weight:800;letter-spacing:1.5px;color:var(--accent);
+  }
+  .brand span{font-size:13px;font-weight:600;letter-spacing:0;color:var(--muted)}
+  .badge{
+    display:inline-flex;align-items:center;gap:6px;
+    background:var(--surface2);border:1px solid var(--line);
+    padding:6px 14px;border-radius:999px;font-size:13px;color:var(--mint);
+    font-weight:600;letter-spacing:.2px;margin-bottom:20px;
+  }
+  .badge::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--mint);
+    animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  h1{font-size:32px;font-weight:800;line-height:1.32;letter-spacing:-.5px;margin-bottom:14px}
+  h1 em{font-style:normal;color:var(--accent)}
+  .sub{font-size:16px;color:var(--muted);margin-bottom:28px}
+  .sub b{color:var(--text);font-weight:600}
+
+  .cta{
+    display:block;width:100%;text-align:center;text-decoration:none;
+    background:var(--accent);color:#fff;font-size:17px;font-weight:700;
+    padding:17px 0;border-radius:14px;letter-spacing:-.2px;
+    box-shadow:0 6px 24px rgba(255,90,69,.35);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .cta:active{transform:scale(.98)}
+  .cta-note{text-align:center;font-size:13px;color:var(--muted);margin-top:10px}
+  .cta-note b{color:var(--mint);font-weight:600}
+
+  .cost{
+    margin-top:22px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:16px 18px;
+  }
+  .cost-title{font-size:14px;font-weight:700;margin-bottom:12px}
+  .cost ul{list-style:none}
+  .cost li{
+    display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    font-size:13.5px;padding:7px 0;border-bottom:1px solid var(--line);
+  }
+  .cost li:last-child{border-bottom:none}
+  .cost li span{color:var(--muted);flex-shrink:0}
+  .cost li b{font-weight:600;text-align:right}
+  .cost li b.free{color:var(--mint);font-weight:800}
+  .cost-note{font-size:12.5px;color:var(--muted);margin-top:11px;padding-top:11px;border-top:1px solid var(--line)}
+
+  /* ── Section base ── */
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  .eyebrow{font-size:13px;font-weight:700;color:var(--accent-soft);letter-spacing:1.5px;margin-bottom:10px}
+  h2{font-size:24px;font-weight:800;line-height:1.35;letter-spacing:-.4px;margin-bottom:8px}
+  .desc{font-size:15px;color:var(--muted);margin-bottom:24px}
+  .desc b{color:var(--text)}
+
+  /* ── Pain cards ── */
+  .cards{display:flex;flex-direction:column;gap:12px}
+  .card{
+    background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius);padding:18px 18px;
+  }
+  .card .emoji{font-size:22px;margin-bottom:8px;display:block}
+  .card h3{font-size:16px;font-weight:700;margin-bottom:4px}
+  .card p{font-size:14px;color:var(--muted)}
+
+  /* ── Timeline ── */
+  .timeline{display:flex;flex-direction:column;position:relative;margin-top:8px}
+  .step{display:flex;gap:16px;padding-bottom:26px;position:relative}
+  .step:last-child{padding-bottom:0}
+  .step::before{
+    content:"";position:absolute;left:17px;top:38px;bottom:0;width:2px;
+    background:var(--line);
+  }
+  .step:last-child::before{display:none}
+  .dot{
+    flex-shrink:0;width:36px;height:36px;border-radius:50%;
+    background:var(--surface2);border:1px solid var(--line);
+    display:flex;align-items:center;justify-content:center;font-size:16px;
+    position:relative;z-index:1;
+  }
+  .step-body h3{font-size:16px;font-weight:700;margin-bottom:3px}
+  .step-body h3 span{font-size:12px;font-weight:600;color:var(--accent-soft);margin-left:6px}
+  .step-body p{font-size:14px;color:var(--muted)}
+  .step-body p b{color:var(--text);font-weight:600}
+
+  /* ── 카드 미리보기 mockup ── */
+  .mock{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:20px;margin-top:20px;
+  }
+  .mock-label{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:1px;margin-bottom:14px}
+  .match-row{
+    display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;
+    font-size:14px;margin-bottom:8px;background:var(--surface2);
+  }
+  .match-row.hit{border:1px solid rgba(255,90,69,.45);background:rgba(255,90,69,.08)}
+  .match-row .tag{flex-shrink:0;font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;margin-top:1px}
+  .hit .tag{background:var(--accent);color:#fff}
+  .mid .tag{background:var(--surface);color:var(--mint);border:1px solid var(--line)}
+  .diff .tag{background:var(--surface);color:var(--muted);border:1px solid var(--line)}
+  .quote{
+    border-left:3px solid var(--mint);padding:8px 12px;margin:14px 0 0;
+    font-size:14px;color:var(--text);background:var(--surface2);border-radius:0 10px 10px 0;
+  }
+  .quote small{display:block;color:var(--muted);font-size:12px;margin-bottom:2px}
+  .seed{
+    margin-top:14px;padding:12px 14px;border-radius:10px;font-size:14px;
+    background:rgba(127,216,190,.08);border:1px solid rgba(127,216,190,.3);color:var(--text);
+  }
+  .seed small{display:block;color:var(--mint);font-size:12px;font-weight:700;margin-bottom:2px}
+
+  /* ── FAQ ── */
+  details{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    margin-bottom:10px;overflow:hidden;
+  }
+  summary{
+    padding:16px 18px;font-size:15px;font-weight:600;cursor:pointer;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+  }
+  summary::after{content:"+";font-size:20px;color:var(--muted);transition:transform .2s}
+  details[open] summary::after{transform:rotate(45deg)}
+  details p{padding:0 18px 16px;font-size:14px;color:var(--muted)}
+  details p b{color:var(--text)}
+
+  /* ── Final CTA ── */
+  .final{padding:52px 0 24px;border-top:1px solid var(--line);text-align:center}
+  .final h2{margin-bottom:6px}
+  .final .desc{margin-bottom:24px}
+  .brand-note{
+    margin-top:34px;padding-top:24px;border-top:1px solid var(--line);
+    font-size:13px;line-height:1.9;color:var(--muted);
+  }
+  .brand-note b{color:var(--accent);font-weight:800;letter-spacing:1px}
+  footer{padding:28px 0 40px;text-align:center;font-size:12px;color:#5f5b55}
+  footer a{color:#5f5b55}
+
+  /* ── 가운데 정렬 ── */
+  header,section{text-align:center}
+  .brand{justify-content:center}
+  .cost-title,.cost-note,.mock-label{text-align:center}
+  /* 구조가 있는 블록은 왼쪽 정렬 유지 */
+  .cost li,.step-body,.row,.quote,.seed,.mission,details{text-align:left}
+  .timeline{display:inline-flex;text-align:left;max-width:100%}
+  .step{width:100%}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header>
+    <p class="brand">HOBIDAY<span>호비데이</span></p>
+    <span class="badge">클라이밍 시즌 1 · 연남·홍대 · 선착순 모집</span>
+    <h1>클라이밍 하러 갔다가,<br><em>인연</em>을 만났다</h1>
+    <p class="sub">
+      취미로 시작해서, 사람으로 끝나는 하루.<br>
+      진짜 클라이머들의 <b>3:3 소개팅</b>.
+    </p>
+    <a class="cta" href="#" data-apply>시즌 1 참가 신청하기</a>
+    <p class="cta-note"><b>참가비 무료</b> · 보증금 1만원은 참석하면 전액 환급</p>
+
+    <div class="cost">
+      <p class="cost-title">💰 비용은 이게 전부예요</p>
+      <ul>
+        <li><span>호비데이 참가비</span><b class="free">0원</b></li>
+        <li><span>암장 일일권 + 신발 대여</span><b>3만원 내외 · 현장 각자 결제</b></li>
+        <li><span>저녁 식사</span><b>각자 먹은 만큼</b></li>
+        <li><span>노쇼 방지 보증금</span><b>1만원 · 참석 시 전액 환급</b></li>
+      </ul>
+      <p class="cost-note">주선비는 받지 않아요. 암장과 식사는 각자 결제합니다.</p>
+    </div>
+  </header>
+
+  <!-- CONTENTS -->
+  <section>
+    <p class="eyebrow">CONTENTS</p>
+    <h2>클라이밍이라서<br>가능한 것들</h2>
+    <p class="desc">
+      클라이밍은 <b>실력이 몸에 남는 취미</b>라 관심 있는 척이 안 통해요.
+      진짜 클라이머만 모이고, 같은 문제를 풀다 보면 대화는 저절로 시작됩니다.
+      소개팅이 망해도 <b>클라이밍 한 판 잘 즐긴 하루</b>가 남고요.
+    </p>
+    <div class="cards">
+      <div class="card">
+        <span class="emoji">🧗</span>
+        <h3>비슷한 실력끼리 만나요</h3>
+        <p>풀 수 있는 난이도(색깔)를 미리 받아 비슷한 실력대끼리 매칭해요.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🎯</span>
+        <h3>함께 푸는 미션</h3>
+        <p>1:1 라운드마다 "둘이 함께 2문제 클리어" 미션. 성공하면 크레딧이 쌓여요.</p>
+      </div>
+      <div class="card">
+        <span class="emoji">🤫</span>
+        <h3>고백은 비공개로</h3>
+        <p>마지막 선택은 각자 앱에서 조용히. 서로 선택했을 때만 연락처가 열려요.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <p class="eyebrow">HOW</p>
+    <h2>하루가 이렇게 흘러가요</h2>
+    <div class="timeline">
+      <div class="step">
+        <div class="dot">👋</div>
+        <div class="step-body">
+          <h3>다 같이 워밍업 <span>30분</span></h3>
+          <p>남녀 3:3, 여섯이서 가볍게 몸 풀며 어색함부터 풀어요.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="dot">🧗</div>
+        <div class="step-body">
+          <h3>1:1 로테이션 × 3 <span>각 30분</span></h3>
+          <p>모든 이성과 한 번씩 짝이 되어 <b>함께 문제를 풀어요.</b> 시작 5분 전, 상대와 나의 <b>공통점 카드</b>가 도착해요.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="dot">🍺</div>
+        <div class="step-body">
+          <h3>여섯이서 저녁 <span>90분</span></h3>
+          <p>클라이밍으로 이미 친해진 후라, 편하게 먹고 떠들면 됩니다. 맛집 코스는 저희가 추천해요.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="dot">💌</div>
+        <div class="step-body">
+          <h3>비공개 최종 선택</h3>
+          <p>각자 앱에서 조용히 선택. <b>서로 선택한 경우에만</b> 번호/인스타가 교환돼요.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 공통점 카드 미리보기 -->
+    <div class="mock">
+      <p class="mock-label">💌 1:1 시작 5분 전, 이런 카드가 도착해요</p>
+      <div class="match-row hit"><span class="tag">일치</span><span>둘 다 🍺 <b>클라이밍 끝나면 맥주파!</b></span></div>
+      <div class="match-row mid"><span class="tag">겹침</span><span>주말 취향: 맛집투어 · 나들이</span></div>
+      <div class="match-row diff"><span class="tag">궁금</span><span>나는 될 때까지 근성형, 상대는 베타 정찰형 🔍</span></div>
+      <div class="quote">
+        <small>상대가 직접 쓴 답 · 클라이밍 시작 계기</small>
+        "친구 따라 갔다가 저만 남았어요"
+      </div>
+      <div class="seed">
+        <small>💬 대화 씨앗</small>
+        "라운드 끝나고 뭐 먹을지부터 정할까요?"
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section>
+    <p class="eyebrow">FAQ</p>
+    <h2>자주 묻는 질문</h2>
+    <details>
+      <summary>클라이밍 실력이 부족한데 괜찮나요?</summary>
+      <p>네! <b>비슷한 실력대끼리</b> 모아드리고, 미션 난이도도 두 사람 중 <b>더 편한 쪽 기준</b>으로 정해져요. 볼더링 3개월 차부터 참여할 수 있어요.</p>
+    </details>
+    <details>
+      <summary>혼자 신청해도 되나요?</summary>
+      <p>대부분 혼자 오세요. 신청하시면 저희가 성비·실력·나이대를 맞춰 3:3 그룹을 만들어드립니다.</p>
+    </details>
+    <details>
+      <summary>어디서 진행되나요?</summary>
+      <p>시즌 1은 <b>연남·홍대 권역</b> 볼더링 짐에서 진행됩니다. 홍대입구역에서 걸어갈 수 있는 거리이고, 끝나고 저녁 먹기도 좋은 동네예요.</p>
+    </details>
+    <details>
+      <summary>아는 사람을 만나면 어쩌죠?</summary>
+      <p>신청서에 다니는 암장을 적어주시면 <b>같은 홈짐인 분들은 다른 그룹으로</b> 배정해드려요.</p>
+    </details>
+  </section>
+
+  <!-- FINAL CTA -->
+  <div class="final">
+    <p class="eyebrow">JOIN</p>
+    <h2>같은 벽 앞에서 만나요</h2>
+    <p class="desc">시즌 1은 소수 인원으로 진행돼요.<br>신청서 작성은 3분이면 충분합니다.</p>
+    <a class="cta" href="#" data-apply>시즌 1 참가 신청하기</a>
+    <p class="cta-note"><b>참가비 무료</b> · 신청 마감 시 대기명단으로 안내</p>
+
+    <p class="brand-note">
+      <b>HOBIDAY</b>는 Hobby + Holiday.<br>
+      취미가 곧 휴일이 되는 하루를 만듭니다.<br>
+      클라이밍을 시작으로 더 많은 취미로 넓혀갈 거예요.
+    </p>
+  </div>
+
+  <footer>
+    ⓒ 2026 HOBIDAY 호비데이 · 문의: <a href="mailto:1212ntnt@naver.com">1212ntnt@naver.com</a>
+  </footer>
+
+</div>
+
+<script>
+  // ⚙️ 여기만 바꾸면 됩니다: 구글폼/탈리 신청서 링크
+  const APPLY_URL = "https://docs.google.com/forms/d/e/1FAIpQLScNpwIjPXRkry0uqjsN-HuDZSKdEZZ01S22oIBOo5Aw6hL5tQ/viewform";
+
+  document.querySelectorAll("[data-apply]").forEach(function(btn){
+    btn.href = APPLY_URL;
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    btn.addEventListener("click", function(){
+      // 전환 측정: GA4 등 붙이면 여기서 이벤트 전송
+      // gtag('event', 'apply_click');
+    });
+  });
+</script>
+
+</body>
+</html>

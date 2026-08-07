@@ -37,6 +37,10 @@ export default function Home() {
       const user = await currentUser();
       setAuthed(!!user);
 
+      // 비로그인은 DB가 아무것도 안 내려준다. 목데이터가 실제 모임처럼
+      // 보이는 걸 막으려고 조회 자체를 하지 않는다.
+      if (!user) return;
+
       const [rows, ppl, prof] = await Promise.all([
         fetchSessions(),
         fetchPeople(),
@@ -51,23 +55,55 @@ export default function Home() {
     })();
   }, []);
 
+  // 비로그인 게이트 — authed 가 null 인 동안(확인 중)은 띄우지 않아 깜빡임이 없다
+  if (authed === false) {
+    return (
+      <main className="px-4">
+        <header className="pt-16 text-center">
+          <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
+            HOBIDAY
+          </p>
+          <h1 className="mt-4 text-[21px] font-extrabold leading-snug tracking-tight">
+            취미로 시작해서,
+            <br />
+            사람으로 끝나는 하루
+          </h1>
+          <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
+            남녀 같은 수로 모이는 2시간 볼더링.
+            <br />
+            모임과 프로필은 로그인 후에 볼 수 있어요.
+          </p>
+        </header>
+
+        <div className="mx-auto mt-8 flex max-w-sm flex-col gap-2">
+          <Link
+            href="/login"
+            className="rounded-xl bg-accent py-3.5 text-center text-[15px] font-bold text-white"
+          >
+            로그인 하기
+          </Link>
+          <Link
+            href="/intro.html"
+            className="rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-muted"
+          >
+            호비데이가 뭔가요?
+          </Link>
+        </div>
+
+        <p className="mt-8 text-center text-[11.5px] leading-relaxed text-muted">
+          참여자 프로필을 보호하려고 로그인 후에만 공개해요.
+        </p>
+      </main>
+    );
+  }
+
   return (
     <main className="px-4">
       {/* 헤더 */}
       <header className="pt-6 pb-4">
-        <div className="flex items-center justify-between">
-          <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
-            HOBIDAY
-          </p>
-          {authed === false && (
-            <Link
-              href="/login"
-              className="rounded-full border border-line px-3 py-1.5 text-[12px] font-bold text-muted"
-            >
-              로그인
-            </Link>
-          )}
-        </div>
+        <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
+          HOBIDAY
+        </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Link
             href="/session/new"

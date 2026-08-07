@@ -1,6 +1,15 @@
 -- ═══════════════════════════════════════════════════════════════
---  HOBIDAY 스키마 v2 — 세션(모임) 기반 상시 매칭 (PRODUCT.md 기준)
+--  HOBIDAY 스키마 v3 — 세션(모임) 기반 상시 매칭 (PRODUCT.md 기준)
 --  Supabase 대시보드 > SQL Editor 에 통째로 붙여넣고 Run
+--
+--  ⚠️ 몇 번을 다시 돌려도 안전하다 (idempotent).
+--     create policy 는 if not exists 를 지원하지 않아 매번 drop 후 재생성한다.
+--
+--  v3 변경점
+--   - 비로그인(anon)은 아무것도 못 본다. 프로필·모임 조회 전부 authenticated 전용.
+--     (v2 는 profiles select 에 to authenticated 가 빠져 있어 공개키만으로
+--      전체 프로필이 조회됐다. 나이+성별+동네+홈짐이면 사실상 신원 특정이 된다.)
+--   - 프로필에 career(구력) · height(키) 추가
 -- ═══════════════════════════════════════════════════════════════
 
 create extension if not exists pgcrypto;
@@ -23,14 +32,33 @@ create table if not exists profiles (
   created_at timestamptz default now()
 );
 
+-- v2 로 이미 만든 DB 를 위한 보강 (새로 만든 경우엔 아무 일도 안 함)
+alter table profiles
+  add column if not exists career int,
+  add column if not exists height int;
+
+do $$
+begin
+  if not exists (select 1 from pg_constraint where conname = 'profiles_career_check') then
+    alter table profiles add constraint profiles_career_check check (career between 1 and 6);
+  end if;
+  if not exists (select 1 from pg_constraint where conname = 'profiles_height_check') then
+    alter table profiles add constraint profiles_height_check check (height between 130 and 220);
+  end if;
+end $$;
+
 alter table profiles enable row level security;
 
+drop policy if exists "profiles: own all" on profiles;
 create policy "profiles: own all" on profiles
-  for all using (auth.uid() = id) with check (auth.uid() = id);
+  for all to authenticated
+  using (auth.uid() = id) with check (auth.uid() = id);
 
--- 사람 찾기: 공개 프로필은 로그인 유저 누구나 조회 가능
+-- 사람 찾기: 공개 프로필은 "로그인한" 유저만 조회 가능
+drop policy if exists "profiles: public readable" on profiles;
 create policy "profiles: public readable" on profiles
-  for select using (is_public = true or auth.uid() = id);
+  for select to authenticated
+  using (is_public = true or auth.uid() = id);
 
 -- ─────────── 모임(세션) ───────────
 create table if not exists sessions (
@@ -56,7 +84,10 @@ create table if not exists sessions (
 
 alter table sessions enable row level security;
 
-create policy "sessions: readable" on sessions for select using (true);
+-- 모임도 로그인해야 보인다 (개인정보는 아니지만 "가입 후 이용" 원칙)
+drop policy if exists "sessions: readable" on sessions;
+create policy "sessions: readable" on sessions
+  for select to authenticated using (true);
 -- 생성·신청은 RPC로만 (아래 security definer 함수)
 
 -- ─────────── 신청 ───────────
@@ -72,8 +103,9 @@ create table if not exists signups (
 
 alter table signups enable row level security;
 
+drop policy if exists "signups: own readable" on signups;
 create policy "signups: own readable" on signups
-  for select using (auth.uid() = user_id);
+  for select to authenticated using (auth.uid() = user_id);
 
 -- ─────────── RPC ───────────
 
@@ -190,10 +222,12 @@ returns json language sql stable security definer set search_path = public as $$
 $$;
 
 -- ─────────── 권한 ───────────
+-- security definer 함수는 RLS 를 우회하므로, anon 에게 주면 정책이 무의미해진다.
+-- v3 부터 session_list 도 authenticated 전용.
 revoke all on all functions in schema public from anon, authenticated;
 
-grant execute on function session_list() to anon, authenticated;
 grant execute on function
+  session_list(),
   session_create(text,timestamptz,timestamptz,int,int,int,int,int,text,boolean,text),
   session_join(uuid), session_cancel(uuid), my_signups()
 to authenticated;

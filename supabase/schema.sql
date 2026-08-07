@@ -222,9 +222,21 @@ returns json language sql stable security definer set search_path = public as $$
 $$;
 
 -- ─────────── 권한 ───────────
--- security definer 함수는 RLS 를 우회하므로, anon 에게 주면 정책이 무의미해진다.
--- v3 부터 session_list 도 authenticated 전용.
-revoke all on all functions in schema public from anon, authenticated;
+-- security definer 함수는 RLS 를 우회한다. anon 이 실행할 수 있으면 위의 정책이
+-- 전부 무의미해지므로 반드시 막아야 한다.
+--
+-- ⚠️ 함정 둘
+--   1) Postgres 는 함수 생성 시 PUBLIC 에 EXECUTE 를 자동으로 준다.
+--      anon 에서만 revoke 하면 PUBLIC 경로로 그대로 실행된다. public 을 꼭 포함할 것.
+--   2) "all functions in schema public" 로 뭉뚱그리면 pgcrypto 같은 확장 함수까지
+--      건드린다. 우리 함수만 하나씩 지정한다.
+
+revoke execute on function session_list() from public, anon;
+revoke execute on function session_create(
+  text,timestamptz,timestamptz,int,int,int,int,int,text,boolean,text) from public, anon;
+revoke execute on function session_join(uuid)   from public, anon;
+revoke execute on function session_cancel(uuid) from public, anon;
+revoke execute on function my_signups()         from public, anon;
 
 grant execute on function
   session_list(),

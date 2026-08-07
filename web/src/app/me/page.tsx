@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { level } from "@/lib/levels";
+import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
 import { getSupabase, hasSupabase, currentUser, fetchMyProfileDb } from "@/lib/supabase";
@@ -60,6 +60,15 @@ export default function Me() {
                   <p className="mt-0.5 text-[13px] text-muted">
                     L{profile.level} {level(profile.level).name} (
                     {level(profile.level).colors}) · {profile.homeGym}
+                  </p>
+                  <p className="mt-0.5 text-[12px] text-muted">
+                    {[
+                      careerLabel(profile.careerId) &&
+                        `구력 ${careerLabel(profile.careerId)}`,
+                      profile.height && `${profile.height}cm`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </>
               ) : (

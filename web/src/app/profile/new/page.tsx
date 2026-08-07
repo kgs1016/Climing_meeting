@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LEVELS, type LevelId } from "@/lib/levels";
+import { CAREERS, LEVELS, type CareerId, type LevelId } from "@/lib/levels";
 import {
   loadMyProfile,
   saveMyProfile,
@@ -66,6 +66,8 @@ export default function ProfileNew() {
   const [age, setAge] = useState("");
   const [area, setArea] = useState("");
   const [level, setLevel] = useState<LevelId>(2);
+  const [careerId, setCareerId] = useState<CareerId | null>(null);
+  const [height, setHeight] = useState("");
   const [homeGym, setHomeGym] = useState("");
   const [mbti, setMbti] = useState("");
   const [intro, setIntro] = useState("");
@@ -93,6 +95,8 @@ export default function ProfileNew() {
       setAge(String(p.age));
       setArea(p.area);
       setLevel(p.level);
+      setCareerId(p.careerId ?? null);
+      setHeight(p.height ? String(p.height) : "");
       setHomeGym(p.homeGym);
       setMbti(p.mbti);
       setIntro(p.intro ?? "");
@@ -100,25 +104,33 @@ export default function ProfileNew() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /** 저장·내리기가 같은 값을 쓰도록 한 곳에서 만든다 */
+  const buildProfile = (): MyProfile => ({
+    nickname: nickname.trim(),
+    gender,
+    age: Number(age),
+    area: area.trim(),
+    level,
+    careerId: careerId ?? undefined,
+    height: Number(height) || undefined,
+    homeGym: homeGym.trim(),
+    mbti,
+    intro: intro.trim() || undefined,
+  });
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const n = Number(age);
     if (!nickname.trim()) return alert("닉네임을 입력해주세요");
     if (!n || n < 19 || n > 60) return alert("나이를 확인해주세요");
     if (!area.trim()) return alert("사는 동네를 입력해주세요");
+    if (!careerId) return alert("구력을 선택해주세요");
+    if (height && (Number(height) < 130 || Number(height) > 220))
+      return alert("키를 확인해주세요 (130~220cm)");
     if (!homeGym.trim()) return alert("홈짐을 입력해주세요");
     if (!mbti) return alert("MBTI를 선택해주세요");
 
-    const profile: MyProfile = {
-      nickname: nickname.trim(),
-      gender,
-      age: n,
-      area: area.trim(),
-      level,
-      homeGym: homeGym.trim(),
-      mbti,
-      intro: intro.trim() || undefined,
-    };
+    const profile = buildProfile();
 
     if (hasSupabase()) {
       setBusy(true);
@@ -135,21 +147,8 @@ export default function ProfileNew() {
     if (!confirm("사람 찾기 목록에서 내 프로필을 내릴까요?")) return;
     if (hasSupabase()) {
       // 삭제가 아니라 비공개 전환 — 모임 참여용 기본 정보는 유지
-      const n = Number(age);
       setBusy(true);
-      await upsertMyProfileDb(
-        {
-          nickname: nickname.trim(),
-          gender,
-          age: n,
-          area: area.trim(),
-          level,
-          homeGym: homeGym.trim(),
-          mbti,
-          intro: intro.trim() || undefined,
-        },
-        false
-      );
+      await upsertMyProfileDb(buildProfile(), false);
       setBusy(false);
     } else {
       removeMyProfile();
@@ -231,6 +230,33 @@ export default function ProfileNew() {
           <p className="mt-1.5 text-[12px] text-muted">
             L{level} {LEVELS[level - 1].name} — 더클라임 기준{" "}
             {LEVELS[level - 1].colors} ({LEVELS[level - 1].vgrade})
+          </p>
+        </Field>
+
+        <Field label="구력 (클라이밍 시작한 지)">
+          <div className="flex flex-wrap gap-1.5">
+            {CAREERS.map((c) => (
+              <Chip
+                key={c.id}
+                active={careerId === c.id}
+                onClick={() => setCareerId(c.id)}
+              >
+                {c.label}
+              </Chip>
+            ))}
+          </div>
+        </Field>
+
+        <Field label="키 (선택)">
+          <input
+            value={height}
+            onChange={(e) => setHeight(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            inputMode="numeric"
+            placeholder="예: 168"
+            className={inputCls}
+          />
+          <p className="mt-1.5 text-[12px] text-muted">
+            안 적어도 돼요. 검색 필터로는 쓰이지 않아요.
           </p>
         </Field>
 

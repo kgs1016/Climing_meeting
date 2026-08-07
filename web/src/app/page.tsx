@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SessionCard from "@/components/SessionCard";
 import { MOCK_SESSIONS, MOCK_PEOPLE, type Session, type Person } from "@/lib/mock";
-import { level } from "@/lib/levels";
+import { careerLabel, level } from "@/lib/levels";
 import { loadMyProfile, type MyProfile } from "@/lib/myProfile";
 import {
   hasSupabase,
@@ -205,11 +205,20 @@ export default function Home() {
                 <p className="font-extrabold text-[15px]">
                   {p.nickname}
                   <span className="ml-1.5 text-[12.5px] font-medium text-muted">
-                    {p.age} · {p.area}
+                    {[p.age, p.height && `${p.height}cm`, p.area]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </p>
-                <p className="mt-0.5 text-[12.5px] text-muted">
-                  L{p.level} {level(p.level).name} · {p.homeGym} · {p.mbti}
+                <p className="mt-0.5 truncate text-[12.5px] text-muted">
+                  {[
+                    `L${p.level} ${level(p.level).name}`,
+                    careerLabel(p.careerId) && `구력 ${careerLabel(p.careerId)}`,
+                    p.homeGym,
+                    p.mbti,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
                 </p>
                 {p.intro && (
                   <p className="mt-1 truncate text-[12.5px] text-ink/85">

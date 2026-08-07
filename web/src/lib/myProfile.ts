@@ -1,6 +1,6 @@
 /* 내 프로필 — 목데이터 단계에선 localStorage, Supabase 연결 시 교체 */
 
-import type { LevelId } from "./levels";
+import type { CareerId, LevelId } from "./levels";
 
 export interface MyProfile {
   nickname: string;
@@ -8,6 +8,10 @@ export interface MyProfile {
   age: number;
   area: string;
   level: LevelId;
+  /** 구력 — 기존 프로필엔 없어서 optional */
+  careerId?: CareerId;
+  /** 키(cm) — 선택 입력. 표시만 하고 필터로는 쓰지 않는다 */
+  height?: number;
   homeGym: string;
   mbti: string;
   intro?: string;

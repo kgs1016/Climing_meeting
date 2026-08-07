@@ -32,3 +32,25 @@ export function levelRangeLabel(min: LevelId, max: LevelId): string {
 export function missionLevel(a: LevelId, b: LevelId): Level {
   return level(Math.min(a, b) as LevelId);
 }
+
+/* ── 구력 ──
+   레벨만으로는 "6개월 만에 파랑"과 "3년 걸려 파랑"이 구분되지 않는다.
+   실력이 같아도 대화 맥락과 태도가 달라서 별도로 받는다. */
+
+export type CareerId = 1 | 2 | 3 | 4 | 5 | 6;
+
+export const CAREERS: { id: CareerId; label: string }[] = [
+  { id: 1, label: "3개월 미만" },
+  { id: 2, label: "3~6개월" },
+  { id: 3, label: "6개월~1년" },
+  { id: 4, label: "1~2년" },
+  { id: 5, label: "2~3년" },
+  { id: 6, label: "3년 이상" },
+];
+
+export const career = (id: CareerId) => CAREERS[id - 1];
+
+/** 값이 없을 수 있어(기존 프로필) 라벨만 안전하게 뽑는다 */
+export function careerLabel(id?: CareerId | null): string | null {
+  return id ? (CAREERS[id - 1]?.label ?? null) : null;
+}

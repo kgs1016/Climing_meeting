@@ -13,6 +13,8 @@ create table if not exists profiles (
   age        int  not null check (age between 19 and 60),
   area       text not null,
   level      int  not null check (level between 1 and 5),   -- L1~L5
+  career     int       check (career between 1 and 6),      -- 구력 (CAREERS)
+  height     int       check (height between 130 and 220),  -- 키(cm) · 선택 · 필터 아님
   home_gym   text not null,
   mbti       text,
   intro      text,

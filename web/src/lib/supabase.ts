@@ -2,7 +2,7 @@
    .env.local 에 키가 없으면 null → 화면은 목데이터로 동작(개발 폴백). */
 
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
-import type { LevelId } from "./levels";
+import type { CareerId, LevelId } from "./levels";
 import type { Session } from "./mock";
 import type { MyProfile } from "./myProfile";
 
@@ -171,6 +171,8 @@ export async function fetchMyProfileDb(): Promise<(MyProfile & { isPublic: boole
     age: data.age,
     area: data.area,
     level: data.level,
+    careerId: data.career ?? undefined,
+    height: data.height ?? undefined,
     homeGym: data.home_gym,
     mbti: data.mbti ?? "",
     intro: data.intro ?? undefined,
@@ -189,6 +191,8 @@ export async function upsertMyProfileDb(p: MyProfile, isPublic: boolean) {
     age: p.age,
     area: p.area,
     level: p.level,
+    career: p.careerId ?? null,
+    height: p.height ?? null,
     home_gym: p.homeGym,
     mbti: p.mbti,
     intro: p.intro ?? null,
@@ -202,7 +206,7 @@ export async function fetchPeople() {
   if (!sb) return null;
   const { data, error } = await sb
     .from("profiles")
-    .select("id, nickname, age, gender, level, home_gym, mbti, area, intro")
+    .select("id, nickname, age, gender, level, career, height, home_gym, mbti, area, intro")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -213,6 +217,8 @@ export async function fetchPeople() {
     age: d.age as number,
     gender: d.gender as "m" | "f",
     level: d.level as LevelId,
+    careerId: (d.career ?? undefined) as CareerId | undefined,
+    height: (d.height ?? undefined) as number | undefined,
     homeGym: d.home_gym as string,
     mbti: (d.mbti ?? "") as string,
     area: d.area as string,

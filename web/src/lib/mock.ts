@@ -1,7 +1,7 @@
 /* 목데이터 — Supabase 연결 전까지 화면 검증용.
    실제 스키마는 PRODUCT.md의 데이터 모델 스케치를 따른다. */
 
-import type { LevelId } from "./levels";
+import type { CareerId, LevelId } from "./levels";
 
 export type Intensity = "chill" | "hard";
 export type SessionStatus = "open" | "confirmed" | "closed";
@@ -32,6 +32,8 @@ export interface Person {
   age: number;
   gender: "m" | "f";
   level: LevelId;
+  careerId?: CareerId;
+  height?: number;
   homeGym: string;
   mbti: string;
   area: string;
@@ -113,10 +115,10 @@ export const MOCK_SESSIONS: Session[] = [
 ];
 
 export const MOCK_PEOPLE: Person[] = [
-  { id: "p1", nickname: "서연", age: 27, gender: "f", level: 3, homeGym: "써미트클라이밍", mbti: "ENFP", area: "연남동" },
-  { id: "p2", nickname: "지훈", age: 29, gender: "m", level: 3, homeGym: "더클라임 연남", mbti: "ISTP", area: "망원동" },
-  { id: "p3", nickname: "하은", age: 31, gender: "f", level: 2, homeGym: "더클라임 B홍대", mbti: "ISFJ", area: "상수동" },
-  { id: "p4", nickname: "민지", age: 26, gender: "f", level: 4, homeGym: "더월 연남", mbti: "INTP", area: "연희동" },
+  { id: "p1", nickname: "서연", age: 27, gender: "f", level: 3, careerId: 4, height: 164, homeGym: "써미트클라이밍", mbti: "ENFP", area: "연남동" },
+  { id: "p2", nickname: "지훈", age: 29, gender: "m", level: 3, careerId: 2, homeGym: "더클라임 연남", mbti: "ISTP", area: "망원동" },
+  { id: "p3", nickname: "하은", age: 31, gender: "f", level: 2, careerId: 1, height: 158, homeGym: "더클라임 B홍대", mbti: "ISFJ", area: "상수동" },
+  { id: "p4", nickname: "민지", age: 26, gender: "f", level: 4, careerId: 6, height: 170, homeGym: "더월 연남", mbti: "INTP", area: "연희동" },
 ];
 
 export function slotsLeft(s: Session) {

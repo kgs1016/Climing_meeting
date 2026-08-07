@@ -1,0 +1,52 @@
+# Supabase 무료 플랜은 7일간 활동이 없으면 프로젝트를 자동 정지한다.
+# 실제 유저 트래픽이 붙기 전까지 이 워크플로가 매일 DB를 한 번 호출해 그 공백을 메운다.
+#
+# - session_list RPC 를 호출한다. 단순 헬스체크와 달리 실제로 Postgres 까지 쿼리가 내려가
+#   "활동"으로 집계된다.
+# - 정지를 '예방'할 뿐, 이미 정지된 프로젝트를 깨우지는 못한다.
+#   실패하면 GitHub 이 알림 메일을 보내므로 대시보드에서 Restore 하면 된다.
+# - 키는 publishable(anon) 키다. 배포된 앱 번들에 이미 들어있는 공개용 키라 노출 위험이 없고,
+#   RLS 가 걸려 있어 이 키만으로는 남의 데이터를 읽거나 쓸 수 없다.
+#   그래도 분리하고 싶으면 레포 Settings > Secrets 에 SUPABASE_ANON_KEY 를 만든 뒤
+#   아래 KEY 줄을 KEY="${{ secrets.SUPABASE_ANON_KEY }}" 로 바꾸면 된다.
+
+name: Supabase Keepalive
+
+on:
+  schedule:
+    # 매일 UTC 03:17 (KST 12:17). 정각은 실행이 몰려 지연되므로 일부러 비켜둠.
+    - cron: "17 3 * * *"
+  workflow_dispatch: # 수동 실행
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: DB 호출
+        run: |
+          KEY="sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_"
+          URL="https://loigwslmwvltdurjttpe.supabase.co/rest/v1/rpc/session_list"
+
+          # 복구 직후엔 스키마 캐시가 아직 안 올라와 몇 번 실패할 수 있어 재시도한다.
+          for i in 1 2 3 4 5; do
+            res=$(curl -sS -m 30 -w $'\n%{http_code}' -X POST "$URL" \
+              -H "apikey: $KEY" \
+              -H "Authorization: Bearer $KEY" \
+              -H "Content-Type: application/json" \
+              -d '{}') || true
+
+            code=$(printf '%s' "$res" | tail -n 1)
+            body=$(printf '%s' "$res" | sed '$d')
+            echo "시도 $i → HTTP ${code:-(응답 없음)}"
+
+            if [ "$code" = "200" ]; then
+              echo "정상 응답: $body"
+              exit 0
+            fi
+
+            echo "$body"
+            [ $i -lt 5 ] && sleep 30
+          done
+
+          echo "::error::Supabase 가 응답하지 않습니다. 정지되었을 수 있으니 대시보드에서 Restore 하세요."
+          exit 1

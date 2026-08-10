@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import ProfileTodo from "@/components/ProfileTodo";
 import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
@@ -96,6 +97,12 @@ export default function Me() {
               )}
             </div>
           </section>
+
+          {profile && (
+            <div className="mt-3">
+              <ProfileTodo profile={profile} />
+            </div>
+          )}
 
           <section className="mt-4 grid grid-cols-2 gap-2">
             <div className="rounded-2xl border border-line bg-surface p-4">

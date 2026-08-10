@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import SessionCard from "@/components/SessionCard";
+import ProfileTodo from "@/components/ProfileTodo";
 import { MOCK_SESSIONS, MOCK_PEOPLE, type Session, type Person } from "@/lib/mock";
 import { careerLabel, level } from "@/lib/levels";
 import { loadMyProfile, type MyProfile } from "@/lib/myProfile";
@@ -260,6 +261,8 @@ export default function Home() {
               + 내 프로필을 올리면 여기에 공개돼요
             </Link>
           )}
+
+          {me && <ProfileTodo profile={me} />}
 
           <p className="rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
             관심을 보내면 상대 신청함에 도착해요. 상대가 수락하면{" "}

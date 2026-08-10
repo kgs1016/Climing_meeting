@@ -358,8 +358,9 @@ export async function fetchMyVideos() {
 
 export interface Chat {
   match_id: string;
-  session_id: string;
-  gym: string;
+  /** 관심 수락으로 생긴 방은 모임이 없어서 null */
+  session_id: string | null;
+  gym: string | null;
   partner_id: string;
   nickname: string;
   age: number;
@@ -404,6 +405,92 @@ export async function sendChat(matchId: string, body: string) {
   });
   if (error) return { error: error.message };
   return data as { ok?: boolean; error?: string };
+}
+
+/* ── 관심 보내기 ── */
+
+export interface ReceivedRequest {
+  id: string;
+  message: string | null;
+  created_at: string;
+  from_id: string;
+  nickname: string;
+  age: number;
+  level: LevelId;
+  career: CareerId | null;
+  height: number | null;
+  home_gym: string;
+  area: string;
+  mbti: string;
+  intro: string | null;
+}
+
+export interface SentRequest {
+  id: string;
+  created_at: string;
+  status: "pending" | "accepted";
+  to_id: string;
+  nickname: string;
+  age: number;
+  level: LevelId;
+  home_gym: string;
+}
+
+export async function sendRequest(toId: string, message?: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("request_send", {
+    p_to: toId,
+    p_message: message ?? null,
+  });
+  if (error) return { error: error.message };
+  return data as {
+    ok?: boolean;
+    left?: number;
+    error?: string;
+    status?: string;
+    limit?: number;
+  };
+}
+
+export async function fetchReceivedRequests() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("requests_received");
+  if (error) return null;
+  return data as ReceivedRequest[];
+}
+
+export async function fetchSentRequests() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("requests_sent");
+  if (error) return null;
+  return data as SentRequest[];
+}
+
+export async function respondRequest(id: string, accept: boolean) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("request_respond", {
+    p_request: id,
+    p_accept: accept,
+  });
+  if (error) return { error: error.message };
+  return data as {
+    ok?: boolean;
+    accepted?: boolean;
+    match_id?: string;
+    error?: string;
+  };
+}
+
+export async function fetchInboxCounts() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("inbox_counts");
+  if (error) return null;
+  return data as { requests: number; sent_today: number; daily_limit: number };
 }
 
 /* ── 프로필 목록 ── */

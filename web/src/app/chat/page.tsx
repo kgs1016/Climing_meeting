@@ -24,6 +24,10 @@ const when = (iso: string) => {
   return sameDay ? hm : `${d.getMonth() + 1}/${d.getDate()}`;
 };
 
+/** 방이 어떻게 열렸는지 — 모임에서 만났거나, 관심 수락으로 연결됐거나 */
+const origin = (c: Chat) =>
+  c.gym ? `${c.gym}에서 만났어요` : "관심을 수락해서 연결됐어요";
+
 export default function ChatPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [chats, setChats] = useState<Chat[] | null>(null);
@@ -95,7 +99,7 @@ export default function ChatPage() {
                   </span>
                 </p>
                 <p className="mt-0.5 truncate text-[12.5px] text-muted">
-                  {c.last_body ?? `${c.gym}에서 만났어요`}
+                  {c.last_body ?? origin(c)}
                 </p>
               </div>
               <span className="shrink-0 text-[11.5px] text-muted">
@@ -153,7 +157,7 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
             {chat.nickname}
           </h1>
           <p className="text-[11.5px] text-muted">
-            {chat.gym}에서 만났어요 · L{chat.level} {level(chat.level).name}
+            {origin(chat)} · L{chat.level} {level(chat.level).name}
           </p>
         </div>
       </header>

@@ -2,7 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { hasSupabase, currentUser, fetchMySignups } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
+import { careerLabel, level } from "@/lib/levels";
+import {
+  hasSupabase,
+  currentUser,
+  fetchMySignups,
+  fetchReceivedRequests,
+  respondRequest,
+  type ReceivedRequest,
+} from "@/lib/supabase";
 
 const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -24,8 +33,23 @@ const MOCK: Row[] = [
 ];
 
 export default function Inbox() {
+  const router = useRouter();
   const [rows, setRows] = useState<Row[] | null>(null);
   const [authed, setAuthed] = useState(true);
+  const [received, setReceived] = useState<ReceivedRequest[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const respond = async (id: string, accept: boolean) => {
+    setBusy(id);
+    const r = await respondRequest(id, accept);
+    setBusy(null);
+    if (r.error) return alert(`실패: ${r.error}`);
+    setReceived((list) => (list ?? []).filter((x) => x.id !== id));
+    if (r.accepted) {
+      alert("수락했어요! 채팅으로 이동합니다.");
+      router.push("/chat");
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -39,6 +63,7 @@ export default function Inbox() {
         setRows([]);
         return;
       }
+      setReceived(await fetchReceivedRequests());
       const data = await fetchMySignups();
       setRows(
         (data ?? []).map((d) => {
@@ -60,6 +85,71 @@ export default function Inbox() {
       <header className="pt-6 pb-4">
         <h1 className="text-[19px] font-extrabold tracking-tight">신청함</h1>
       </header>
+
+      {/* 받은 관심 — 수락하면 채팅이 열린다 */}
+      {authed && received && received.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-[14px] font-bold">
+            💌 받은 관심{" "}
+            <span className="font-medium text-accent">{received.length}</span>
+          </h2>
+          <div className="flex flex-col gap-2">
+            {received.map((r) => (
+              <div
+                key={r.id}
+                className="rounded-2xl border border-accent/40 bg-accent/[0.06] p-4"
+              >
+                <p className="text-[15px] font-extrabold">
+                  {r.nickname}
+                  <span className="ml-1.5 text-[12px] font-medium text-muted">
+                    {[r.age, r.height && `${r.height}cm`, r.area]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-muted">
+                  {[
+                    `L${r.level} ${level(r.level).name}`,
+                    careerLabel(r.career) && `구력 ${careerLabel(r.career)}`,
+                    r.home_gym,
+                    r.mbti,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </p>
+
+                {r.message && (
+                  <p className="mt-2.5 rounded-r-lg border-l-[3px] border-accent bg-surface2 px-3 py-2 text-[13px] leading-relaxed">
+                    &ldquo;{r.message}&rdquo;
+                  </p>
+                )}
+
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    disabled={busy === r.id}
+                    onClick={() => respond(r.id, false)}
+                    className="rounded-xl border border-line py-2.5 text-[13px] font-bold text-muted disabled:opacity-50"
+                  >
+                    거절
+                  </button>
+                  <button
+                    disabled={busy === r.id}
+                    onClick={() => respond(r.id, true)}
+                    className="rounded-xl bg-accent py-2.5 text-[13px] font-bold text-white disabled:opacity-50"
+                  >
+                    {busy === r.id ? "처리 중…" : "수락하고 채팅"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-2 text-[11.5px] text-muted">
+            거절하면 상대에게 알리지 않아요.
+          </p>
+        </section>
+      )}
+
+      {authed && <h2 className="mb-2 text-[14px] font-bold">🧗 신청한 모임</h2>}
 
       {!authed ? (
         <div className="mt-14 flex flex-col items-center gap-3 text-center">

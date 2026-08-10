@@ -12,6 +12,9 @@ import {
   fetchSessions,
   fetchPeople,
   fetchMyProfileDb,
+  fetchInboxCounts,
+  fetchSentRequests,
+  sendRequest,
   toSession,
 } from "@/lib/supabase";
 
@@ -24,6 +27,12 @@ export default function Home() {
   const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
   const [people, setPeople] = useState<(Person & { intro?: string })[]>(MOCK_PEOPLE);
   const [live, setLive] = useState(false);
+  // 관심 보내기
+  const [sentTo, setSentTo] = useState<Set<string>>(new Set());
+  const [counts, setCounts] = useState<Awaited<ReturnType<typeof fetchInboxCounts>>>(null);
+  const [reqTarget, setReqTarget] = useState<Person | null>(null);
+  const [reqMsg, setReqMsg] = useState("");
+  const [reqBusy, setReqBusy] = useState(false);
 
   useEffect(() => {
     if (window.location.hash === "#people") setTab("people");
@@ -52,8 +61,32 @@ export default function Home() {
         setLive(true);
       }
       if (ppl) setPeople(ppl);
+
+      const [sent, c] = await Promise.all([fetchSentRequests(), fetchInboxCounts()]);
+      if (sent) setSentTo(new Set(sent.map((s) => s.to_id)));
+      if (c) setCounts(c);
     })();
   }, []);
+
+  const REQ_ERRORS: Record<string, string> = {
+    already: "이미 관심을 보낸 상대예요",
+    same_gender: "이성에게만 보낼 수 있어요",
+    not_public: "상대가 프로필을 내렸어요",
+    no_profile: "먼저 내 프로필을 만들어주세요",
+    limit: "오늘 보낼 수 있는 관심을 다 썼어요. 내일 다시 시도해주세요",
+  };
+
+  const sendReq = async () => {
+    if (!reqTarget) return;
+    setReqBusy(true);
+    const r = await sendRequest(reqTarget.id, reqMsg);
+    setReqBusy(false);
+    if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);
+    setSentTo((s) => new Set(s).add(reqTarget.id));
+    setCounts((c) => (c ? { ...c, sent_today: c.sent_today + 1 } : c));
+    setReqTarget(null);
+    alert(`${reqTarget.nickname}님에게 관심을 보냈어요!\n수락하면 채팅이 열려요.`);
+  };
 
   // 비로그인 게이트 — authed 가 null 인 동안(확인 중)은 띄우지 않아 깜빡임이 없다
   if (authed === false) {
@@ -221,8 +254,14 @@ export default function Home() {
           )}
 
           <p className="rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
-            사람 찾기는 프로필이 공개돼요. 신청은{" "}
-            <b className="text-ink">신청권</b>을 사용합니다. (다음 단계)
+            관심을 보내면 상대 신청함에 도착해요. 상대가 수락하면{" "}
+            <b className="text-ink">채팅이 열려요.</b>
+            {counts && (
+              <>
+                <br />
+                오늘 {counts.daily_limit - counts.sent_today}번 더 보낼 수 있어요.
+              </>
+            )}
           </p>
 
           {people.map((p) => (
@@ -262,16 +301,66 @@ export default function Home() {
                   </p>
                 )}
               </div>
-              <div className="flex shrink-0 flex-col gap-1.5">
-                <button className="rounded-lg border border-line px-3 py-1.5 text-[12px] font-bold text-muted">
-                  관심
-                </button>
-                <button className="rounded-lg bg-accent px-3 py-1.5 text-[12px] font-bold text-white">
-                  신청
-                </button>
-              </div>
+              {/* 관심 하나로 통일 — 보내면 상대 신청함에 뜨고, 수락하면 채팅이 열린다 */}
+              <button
+                disabled={sentTo.has(p.id)}
+                onClick={() => {
+                  setReqTarget(p);
+                  setReqMsg("");
+                }}
+                className={`shrink-0 rounded-lg px-3 py-2 text-[12px] font-bold ${
+                  sentTo.has(p.id)
+                    ? "border border-line text-muted"
+                    : "bg-accent text-white"
+                }`}
+              >
+                {sentTo.has(p.id) ? "보냈어요" : "관심 보내기"}
+              </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 관심 보내기 시트 — 한 줄 메시지를 붙이면 받는 쪽이 맥락을 보고 판단한다 */}
+      {reqTarget && (
+        <div
+          className="fixed inset-0 z-30 flex items-end bg-black/60"
+          onClick={() => setReqTarget(null)}
+        >
+          <div
+            className="mx-auto w-full max-w-md rounded-t-2xl border-t border-line bg-surface p-5 pb-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p className="text-[16px] font-extrabold">
+              {reqTarget.nickname}님에게 관심 보내기
+            </p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+              한 줄 남기면 수락될 가능성이 높아요. 비워도 됩니다.
+            </p>
+            <textarea
+              value={reqMsg}
+              onChange={(e) => setReqMsg(e.target.value.slice(0, 200))}
+              rows={3}
+              placeholder={`예: 같은 ${reqTarget.homeGym} 다니네요! 주말에 같이 타요`}
+              className="mt-3 w-full resize-none rounded-xl border border-line bg-surface2 px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
+            />
+            <p className="mt-1 text-right text-[11.5px] text-muted">
+              {reqMsg.length}/200
+            </p>
+            <button
+              disabled={reqBusy}
+              onClick={sendReq}
+              className="mt-2 w-full rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white disabled:opacity-50"
+            >
+              {reqBusy ? "보내는 중…" : "관심 보내기"}
+            </button>
+            <button
+              onClick={() => setReqTarget(null)}
+              className="mt-2 w-full py-2 text-[13px] font-semibold text-muted"
+            >
+              취소
+            </button>
+          </div>
         </div>
       )}
     </main>

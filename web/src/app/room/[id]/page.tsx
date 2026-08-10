@@ -4,6 +4,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { careerLabel, level, missionLevel } from "@/lib/levels";
 import { buildCard, type CardProfile, type Tier } from "@/lib/matchCard";
+import { DEMO_ID, DEMO_ME, buildDemoRoom, demoMatches } from "@/lib/roomDemo";
 import {
   fetchMatches,
   fetchMyProfileDb,
@@ -67,6 +68,8 @@ const ERRORS: Record<string, string> = {
 export default function Room({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
+  // /room/demo — 혼자서 화면을 확인하기 위한 경로. DB를 타지 않는다.
+  const isDemo = id === DEMO_ID;
 
   const [room, setRoom] = useState<Room | null>(null);
   // 공통점 카드는 내 프로필과 비교해야 만들어진다
@@ -78,6 +81,11 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
+    if (isDemo) {
+      setRoom(buildDemoRoom());
+      setMine(DEMO_ME);
+      return;
+    }
     const [r, p] = await Promise.all([fetchRoom(id), fetchMyProfileDb()]);
     if (r.error) return setErr(r.error);
     setRoom(r.room!);
@@ -93,14 +101,16 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
         intro: p.intro,
       });
     if (r.room!.selection_open) setMatches(await fetchMatches(id));
-  }, [id]);
+  }, [id, isDemo]);
 
   useEffect(() => {
     load();
+    // 데모는 새로 불러오면 눌러둔 미션 체크가 초기화되므로 폴링하지 않는다
+    if (isDemo) return;
     // 라운드가 시간에 따라 열리므로 주기적으로 다시 확인한다
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
-  }, [load]);
+  }, [load, isDemo]);
 
   if (err)
     return (
@@ -120,6 +130,19 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     return <main className="px-4 pt-20 text-center text-muted">불러오는 중…</main>;
 
   const onMission = async (round: number) => {
+    if (isDemo) {
+      setRoom((r) =>
+        r
+          ? {
+              ...r,
+              rounds: r.rounds.map((x) =>
+                x.round === round ? { ...x, mission_done: true } : x
+              ),
+            }
+          : r
+      );
+      return;
+    }
     setBusy(true);
     const r = await markMissionDone(id, round);
     setBusy(false);
@@ -130,6 +153,12 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
   const onSubmit = async () => {
     if (!confirm("제출하면 상대에게는 알리지 않아요. 서로 선택한 경우에만 열려요.\n제출할까요?"))
       return;
+    if (isDemo) {
+      // 데모에선 고른 사람이 전부 나를 고른 것으로 가정해 결과 화면을 보여준다
+      setSubmitted(true);
+      setMatches(demoMatches(picked));
+      return;
+    }
     setBusy(true);
     const r = await submitSelection(id, [...picked]);
     setBusy(false);
@@ -158,6 +187,13 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
           </p>
         </div>
       </header>
+
+      {isDemo && (
+        <p className="mb-3 rounded-xl border border-dashed border-accent/50 bg-accent/10 px-4 py-2.5 text-[12px] leading-relaxed text-accent">
+          <b>데모 화면입니다.</b> 저장되지 않고, 실제 참가자가 아니에요.
+          최종선택은 확인용으로 미리 열어놨습니다.
+        </p>
+      )}
 
       {/* 워밍업 */}
       <section className="rounded-2xl border border-line bg-surface p-4">

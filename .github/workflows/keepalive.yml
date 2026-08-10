@@ -1,8 +1,10 @@
 # Supabase 무료 플랜은 7일간 활동이 없으면 프로젝트를 자동 정지한다.
 # 실제 유저 트래픽이 붙기 전까지 이 워크플로가 매일 DB를 한 번 호출해 그 공백을 메운다.
 #
-# - session_list RPC 를 호출한다. 단순 헬스체크와 달리 실제로 Postgres 까지 쿼리가 내려가
-#   "활동"으로 집계된다.
+# - sessions 테이블을 조회한다. RLS 때문에 행은 안 내려오지만(빈 배열) PostgREST 를 거쳐
+#   Postgres 까지 실제 쿼리가 내려가므로 활동으로 집계된다.
+#   ⚠️ 예전엔 session_list RPC 를 불렀는데, 보안 강화로 그 함수의 anon 실행권한을
+#      회수한 뒤부터 매일 401 로 실패했다. anon 이 정당하게 접근 가능한 것만 호출한다.
 # - 정지를 '예방'할 뿐, 이미 정지된 프로젝트를 깨우지는 못한다.
 #   실패하면 GitHub 이 알림 메일을 보내므로 대시보드에서 Restore 하면 된다.
 # - 키는 publishable(anon) 키다. 배포된 앱 번들에 이미 들어있는 공개용 키라 노출 위험이 없고,
@@ -25,24 +27,31 @@ jobs:
       - name: DB 호출
         run: |
           KEY="sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_"
-          URL="https://loigwslmwvltdurjttpe.supabase.co/rest/v1/rpc/session_list"
+          URL="https://loigwslmwvltdurjttpe.supabase.co/rest/v1/sessions?select=id&limit=1"
 
           # 복구 직후엔 스키마 캐시가 아직 안 올라와 몇 번 실패할 수 있어 재시도한다.
           for i in 1 2 3 4 5; do
-            res=$(curl -sS -m 30 -w $'\n%{http_code}' -X POST "$URL" \
+            res=$(curl -sS -m 30 -w $'\n%{http_code}' "$URL" \
               -H "apikey: $KEY" \
-              -H "Authorization: Bearer $KEY" \
-              -H "Content-Type: application/json" \
-              -d '{}') || true
+              -H "Authorization: Bearer $KEY") || true
 
             code=$(printf '%s' "$res" | tail -n 1)
             body=$(printf '%s' "$res" | sed '$d')
             echo "시도 $i → HTTP ${code:-(응답 없음)}"
 
-            if [ "$code" = "200" ]; then
-              echo "정상 응답: $body"
-              exit 0
-            fi
+            case "$code" in
+              200)
+                echo "정상 응답: $body"
+                exit 0
+                ;;
+              401|403)
+                # 권한·키 문제는 기다려도 안 풀린다. 재시도하지 않고 원인을 정확히 알린다.
+                # (여기서 "Restore 하세요" 라고 안내하면 엉뚱한 데를 보게 된다.)
+                echo "$body"
+                echo "::error::권한/키 문제입니다 (HTTP $code). 정지가 아니므로 Restore 는 소용없어요 — anon 이 이 요청을 할 수 있는지, 키가 유효한지 확인하세요."
+                exit 1
+                ;;
+            esac
 
             echo "$body"
             [ $i -lt 5 ] && sleep 30

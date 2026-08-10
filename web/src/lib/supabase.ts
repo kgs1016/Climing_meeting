@@ -545,6 +545,8 @@ export async function fetchPeople() {
       "id, nickname, age, gender, level, career, height, home_gym, mbti, area, intro, photo"
     )
     .eq("is_public", true)
+    // 사진 없는 카드는 목록에 넣지 않는다 (DB 제약과 이중으로)
+    .not("photo", "is", null)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) return null;

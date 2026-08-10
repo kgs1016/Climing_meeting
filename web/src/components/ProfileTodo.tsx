@@ -1,15 +1,9 @@
 import Link from "next/link";
 import type { MyProfile } from "@/lib/myProfile";
+import { missingFields } from "@/lib/profileGate";
 
-/* 나중에 필수가 된 항목이 기존 프로필엔 비어 있다.
-   프로필을 지워서 다시 만들게 하는 대신, 뭐가 비었는지 알려주고 수정으로 보낸다. */
-export function missingFields(p: MyProfile): string[] {
-  const missing: string[] = [];
-  if (!p.photo) missing.push("대표 사진");
-  if (!p.careerId) missing.push("구력");
-  return missing;
-}
-
+/* 프로필이 이미 완성된 유저에게는 안 뜬다.
+   게이트를 통과한 뒤 나중에 사진을 지우는 등의 경우를 위한 안전망. */
 export default function ProfileTodo({ profile }: { profile: MyProfile }) {
   const missing = missingFields(profile);
   if (missing.length === 0) return null;
@@ -23,10 +17,7 @@ export default function ProfileTodo({ profile }: { profile: MyProfile }) {
         프로필에 {missing.join(" · ")}이 빠졌어요
       </p>
       <p className="mt-0.5 text-[12px] leading-relaxed text-muted">
-        {missing.includes("대표 사진")
-          ? "사진이 있으면 관심을 받을 확률이 크게 올라가요. "
-          : ""}
-        지금 채우기 →
+        채우기 전에는 사람 찾기에 내 프로필이 안 보여요. 지금 채우기 →
       </p>
     </Link>
   );

@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { levelRangeLabel, missionLevel } from "@/lib/levels";
+import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
 import {
   hasSupabase,
@@ -78,9 +79,13 @@ export default function SessionDetail({
       return;
     }
     const profile = await fetchMyProfileDb();
-    if (!profile) {
+    if (!isProfileComplete(profile)) {
       setBusy(false);
-      alert("먼저 프로필을 만들어주세요 (성비 매칭의 기본 정보예요)");
+      alert(
+        profile
+          ? "프로필을 먼저 완성해주세요 (대표 사진·구력)"
+          : "먼저 프로필을 만들어주세요 (성비 매칭의 기본 정보예요)"
+      );
       router.push("/profile/new");
       return;
     }

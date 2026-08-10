@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEVELS, type LevelId } from "@/lib/levels";
 import { hasSupabase, currentUser, fetchMyProfileDb, createSession } from "@/lib/supabase";
+import { isProfileComplete } from "@/lib/profileGate";
 
 const GYMS = [
   "더클라임 B홍대",
@@ -120,9 +121,13 @@ export default function NewSession() {
       return;
     }
     const profile = await fetchMyProfileDb();
-    if (!profile) {
+    if (!isProfileComplete(profile)) {
       setBusy(false);
-      alert("먼저 프로필을 만들어주세요 (모임 참여의 기본 정보예요)");
+      alert(
+        profile
+          ? "프로필을 먼저 완성해주세요 (대표 사진·구력)"
+          : "먼저 프로필을 만들어주세요 (모임 참여의 기본 정보예요)"
+      );
       router.push("/profile/new");
       return;
     }

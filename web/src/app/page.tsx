@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { isProfileComplete } from "@/lib/profileGate";
 import SessionCard from "@/components/SessionCard";
 import ProfileTodo from "@/components/ProfileTodo";
 import { MOCK_SESSIONS, MOCK_PEOPLE, type Session, type Person } from "@/lib/mock";
@@ -23,9 +25,11 @@ import {
 const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
 
 export default function Home() {
+  const router = useRouter();
   const [tab, setTab] = useState<"session" | "people">("session");
   const [me, setMe] = useState<MyProfile | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [onboarding, setOnboarding] = useState(false);
   const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
   const [people, setPeople] = useState<(Person & { intro?: string })[]>(MOCK_PEOPLE);
   const [live, setLive] = useState(false);
@@ -53,11 +57,15 @@ export default function Home() {
       // 보이는 걸 막으려고 조회 자체를 하지 않는다.
       if (!user) return;
 
-      const [rows, ppl, prof] = await Promise.all([
-        fetchSessions(),
-        fetchPeople(),
-        user ? fetchMyProfileDb() : Promise.resolve(null),
-      ]);
+      // 프로필(사진 포함)을 먼저 완성해야 둘러볼 수 있다
+      const prof = await fetchMyProfileDb();
+      if (!isProfileComplete(prof)) {
+        setOnboarding(true);
+        router.replace("/profile/new");
+        return;
+      }
+
+      const [rows, ppl] = await Promise.all([fetchSessions(), fetchPeople()]);
       if (prof) setMe(prof);
       if (rows) {
         setSessions(rows.map((r) => toSession(r, prof?.homeGym)));
@@ -96,6 +104,14 @@ export default function Home() {
     setReqTarget(null);
     alert(`${reqTarget.nickname}님에게 관심을 보냈어요!\n수락하면 채팅이 열려요.`);
   };
+
+  // 프로필 작성 화면으로 넘어가는 중
+  if (onboarding)
+    return (
+      <main className="px-4 pt-24 text-center text-muted">
+        프로필 작성으로 이동 중…
+      </main>
+    );
 
   // 비로그인 게이트 — authed 가 null 인 동안(확인 중)은 띄우지 않아 깜빡임이 없다
   if (authed === false) {

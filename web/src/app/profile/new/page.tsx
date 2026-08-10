@@ -9,6 +9,7 @@ import {
   removeMyProfile,
   type MyProfile,
 } from "@/lib/myProfile";
+import { isProfileComplete } from "@/lib/profileGate";
 import {
   PHOTO_MAX_BYTES,
   hasSupabase,
@@ -63,6 +64,7 @@ const inputCls =
 export default function ProfileNew() {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
 
   const [nickname, setNickname] = useState("");
   const [gender, setGender] = useState<"m" | "f">("f");
@@ -118,6 +120,8 @@ export default function ProfileNew() {
       } else {
         p = loadMyProfile();
       }
+      // 미완성이면 온보딩 맥락으로 보여준다 (프로필이 아예 없는 경우 포함)
+      if (!isProfileComplete(p)) setOnboarding(true);
       if (!p) return;
       setEditing(true);
       setNickname(p.nickname);
@@ -176,7 +180,8 @@ export default function ProfileNew() {
     } else {
       saveMyProfile(profile);
     }
-    router.push("/#people");
+    // 온보딩을 막 끝냈으면 사람 목록보다 모임 찾기로 보내는 게 자연스럽다
+    router.push(onboarding ? "/" : "/#people");
   };
 
   const takeDown = async () => {
@@ -195,18 +200,34 @@ export default function ProfileNew() {
   return (
     <main className="px-4">
       <header className="flex items-center gap-3 pt-5 pb-4">
-        <button onClick={() => router.back()} className="text-lg text-muted">
-          ←
-        </button>
+        {/* 온보딩 중에는 나갈 곳이 없다 — 뒤로 버튼을 두면 빈 프로필로 빠져나간다 */}
+        {!onboarding && (
+          <button onClick={() => router.back()} className="text-lg text-muted">
+            ←
+          </button>
+        )}
         <h1 className="text-[19px] font-extrabold tracking-tight">
-          {editing ? "내 프로필 수정" : "내 프로필 올리기"}
+          {onboarding
+            ? "프로필 만들기"
+            : editing
+              ? "내 프로필 수정"
+              : "내 프로필 올리기"}
         </h1>
       </header>
 
-      <p className="mb-5 rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
-        여기 올린 프로필은 <b className="text-ink">사람 찾기 목록에 공개</b>돼요.
-        모임 참여는 블라인드라 프로필이 공개되지 않아요.
-      </p>
+      {onboarding ? (
+        <p className="mb-5 rounded-xl border border-accent/40 bg-accent/10 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
+          <b className="text-accent">시작하기 전에 프로필을 완성해주세요.</b>
+          <br />
+          서로 얼굴과 실력을 아는 사람들끼리 만나는 게 이 앱의 전부예요. 모두가
+          같은 조건이라 부담 갖지 않으셔도 돼요.
+        </p>
+      ) : (
+        <p className="mb-5 rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
+          여기 올린 프로필은 <b className="text-ink">사람 찾기 목록에 공개</b>돼요.
+          모임 참여는 블라인드라 프로필이 공개되지 않아요.
+        </p>
+      )}
 
       <form className="flex flex-col gap-6 pb-8" onSubmit={submit}>
         {/* 대표 사진 — 사람 찾기의 첫인상이라 필수 */}
@@ -378,7 +399,7 @@ export default function ProfileNew() {
           {busy ? "저장 중…" : editing ? "수정 완료" : "프로필 올리기"}
         </button>
 
-        {editing && (
+        {editing && !onboarding && (
           <button
             type="button"
             onClick={takeDown}

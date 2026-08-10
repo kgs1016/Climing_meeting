@@ -5,12 +5,20 @@ import BottomNav from "@/components/BottomNav";
 export const metadata: Metadata = {
   title: "호비데이 HOBIDAY",
   description: "취미로 시작해서, 사람으로 끝나는 하루 — 볼더링 세션 매칭",
+  // 홈 화면에 추가했을 때 주소창 없이 앱처럼 뜨게 한다
+  appleWebApp: {
+    title: "호비데이",
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   themeColor: "#0f0e0d",
+  // 아이폰 노치·홈바 영역까지 배경을 채운다
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -27,7 +35,16 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full">
-        <div className="mx-auto max-w-md min-h-dvh pb-20">{children}</div>
+        {/* 상단은 노치, 하단은 홈바 + 네비 높이만큼 비운다 */}
+        <div
+          className="mx-auto max-w-md min-h-dvh"
+          style={{
+            paddingTop: "env(safe-area-inset-top)",
+            paddingBottom: "calc(5rem + env(safe-area-inset-bottom))",
+          }}
+        >
+          {children}
+        </div>
         <BottomNav />
       </body>
     </html>

@@ -14,7 +14,11 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-20 border-t border-line bg-surface/95 backdrop-blur">
+    // pb-[safe] — 홈 화면에 추가해 전체화면으로 뜰 때 아이폰 홈바에 가리지 않게
+    <nav
+      className="fixed bottom-0 inset-x-0 z-20 border-t border-line bg-surface/95 backdrop-blur"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
       <div className="mx-auto max-w-md grid grid-cols-4">
         {TABS.map((t) => {
           const active =

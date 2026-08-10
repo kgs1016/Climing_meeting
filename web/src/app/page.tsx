@@ -314,7 +314,7 @@ export default function Home() {
                     : "bg-accent text-white"
                 }`}
               >
-                {sentTo.has(p.id) ? "보냈어요" : "관심 보내기"}
+                {sentTo.has(p.id) ? "보냈어요" : "관심"}
               </button>
             </div>
           ))}

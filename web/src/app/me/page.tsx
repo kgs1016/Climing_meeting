@@ -6,12 +6,19 @@ import { useRouter } from "next/navigation";
 import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
-import { getSupabase, hasSupabase, currentUser, fetchMyProfileDb } from "@/lib/supabase";
+import {
+  getSupabase,
+  hasSupabase,
+  currentUser,
+  fetchMyProfileDb,
+  fetchMyVideos,
+} from "@/lib/supabase";
 
 export default function Me() {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [videoCount, setVideoCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +35,9 @@ export default function Me() {
         return;
       }
       setEmail(user.email ?? "");
-      setProfile(await fetchMyProfileDb());
+      const [prof, vids] = await Promise.all([fetchMyProfileDb(), fetchMyVideos()]);
+      setProfile(prof);
+      setVideoCount(vids?.length ?? 0);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -95,7 +104,7 @@ export default function Me() {
             </div>
             <div className="rounded-2xl border border-line bg-surface p-4">
               <p className="text-[12px] font-semibold text-muted">내 영상</p>
-              <p className="mt-1 text-[19px] font-extrabold">🎥 0</p>
+              <p className="mt-1 text-[19px] font-extrabold">🎥 {videoCount}</p>
             </div>
           </section>
 

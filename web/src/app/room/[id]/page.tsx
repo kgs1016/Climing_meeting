@@ -6,11 +6,15 @@ import { careerLabel, level, missionLevel } from "@/lib/levels";
 import { buildCard, type CardProfile, type Tier } from "@/lib/matchCard";
 import { DEMO_ID, DEMO_ME, buildDemoRoom, demoMatches } from "@/lib/roomDemo";
 import {
+  VIDEO_MAX_BYTES,
   fetchMatches,
   fetchMyProfileDb,
+  fetchMyVideos,
   fetchRoom,
   markMissionDone,
+  signedVideoUrl,
   submitSelection,
+  uploadMissionVideo,
   type Room,
   type RoomPartner,
   type RoomRound,
@@ -79,6 +83,9 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
   const [matches, setMatches] = useState<Awaited<ReturnType<typeof fetchMatches>>>(null);
   const [submitted, setSubmitted] = useState(false);
   const [busy, setBusy] = useState(false);
+  // 라운드 → 업로드된 영상 경로
+  const [videos, setVideos] = useState<Record<number, string>>({});
+  const [uploading, setUploading] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (isDemo) {
@@ -101,6 +108,15 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
         intro: p.intro,
       });
     if (r.room!.selection_open) setMatches(await fetchMatches(id));
+
+    // 이 모임에서 올린 내 영상들
+    const vids = await fetchMyVideos();
+    if (vids)
+      setVideos(
+        Object.fromEntries(
+          vids.filter((v) => v.session_id === id).map((v) => [v.round, v.video_url])
+        )
+      );
   }, [id, isDemo]);
 
   useEffect(() => {
@@ -148,6 +164,38 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     setBusy(false);
     if (r.error) return alert(`실패: ${r.error}`);
     load();
+  };
+
+  const onUpload = async (round: number, file: File) => {
+    if (isDemo) {
+      alert("데모에서는 업로드가 저장되지 않아요. 실제 모임에서 써보세요!");
+      return;
+    }
+    if (file.size > VIDEO_MAX_BYTES) {
+      alert(
+        `영상이 너무 커요 (${(file.size / 1024 / 1024).toFixed(0)}MB).\n50MB 이하로 줄여주세요 — 20~30초면 충분해요.`
+      );
+      return;
+    }
+    setUploading(round);
+    const up = await uploadMissionVideo(id, round, file);
+    if (up.error) {
+      setUploading(null);
+      return alert(`업로드 실패: ${up.error}`);
+    }
+    // 업로드가 끝나야 미션 완료로 기록한다 (경로를 같이 넘김)
+    const r = await markMissionDone(id, round, up.path);
+    setUploading(null);
+    if (r.error) return alert(`실패: ${r.error}`);
+    load();
+  };
+
+  const onPlay = async (round: number) => {
+    const path = videos[round];
+    if (!path) return;
+    const url = await signedVideoUrl(path);
+    if (!url) return alert("영상을 열지 못했어요");
+    window.open(url, "_blank", "noopener");
   };
 
   const onSubmit = async () => {
@@ -222,7 +270,11 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
           me={mine}
           myLevel={room.me.level}
           busy={busy}
+          videoPath={videos[r.round]}
+          uploading={uploading === r.round}
           onMission={() => onMission(r.round)}
+          onUpload={(f) => onUpload(r.round, f)}
+          onPlay={() => onPlay(r.round)}
         />
       ))}
 
@@ -325,13 +377,21 @@ function RoundBlock({
   me,
   myLevel,
   busy,
+  videoPath,
+  uploading,
   onMission,
+  onUpload,
+  onPlay,
 }: {
   round: RoomRound;
   me: CardProfile | null;
   myLevel: Room["me"]["level"];
   busy: boolean;
+  videoPath?: string;
+  uploading: boolean;
   onMission: () => void;
+  onUpload: (f: File) => void;
+  onPlay: () => void;
 }) {
   // 라운드가 열리기 전에는 서버가 상대를 안 내려준다 — 여기서 가릴 수 있는 게 아니다
   if (!round.is_open || !round.partner) {
@@ -414,15 +474,48 @@ function RoundBlock({
           둘 중 편한 쪽 기준이에요. <b className="text-ink">완등 못 해도 괜찮아요</b> —
           서로 영상 찍어주는 게 진짜 미션이에요.
         </p>
-        <button
-          disabled={busy || round.mission_done}
-          onClick={onMission}
-          className={`mt-2.5 w-full rounded-lg py-2.5 text-[13px] font-bold disabled:opacity-60 ${
-            round.mission_done ? "bg-mint/15 text-mint" : "bg-accent text-white"
+        {/* 영상 — 라벨을 input 으로 쓰면 모바일에서 카메라/앨범이 바로 열린다 */}
+        <label
+          className={`mt-2.5 block w-full cursor-pointer rounded-lg py-2.5 text-center text-[13px] font-bold ${
+            uploading ? "bg-surface text-muted" : "bg-accent text-white"
           }`}
         >
-          {round.mission_done ? "✓ 완료했어요" : "미션 완료 체크"}
-        </button>
+          {uploading ? "올리는 중…" : videoPath ? "🎥 영상 다시 올리기" : "🎥 등반 영상 올리기"}
+          <input
+            type="file"
+            accept="video/*"
+            className="hidden"
+            disabled={uploading}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = ""; // 같은 파일 다시 골라도 onChange 가 뜨게
+              if (f) onUpload(f);
+            }}
+          />
+        </label>
+
+        {videoPath && (
+          <button
+            onClick={onPlay}
+            className="mt-1.5 w-full rounded-lg border border-line py-2 text-[12.5px] font-bold text-mint"
+          >
+            ▶ 올린 영상 보기
+          </button>
+        )}
+
+        {!round.mission_done && (
+          <button
+            disabled={busy}
+            onClick={onMission}
+            className="mt-1.5 w-full rounded-lg py-2 text-[12.5px] font-semibold text-muted underline underline-offset-4 disabled:opacity-60"
+          >
+            영상 없이 완료 체크
+          </button>
+        )}
+
+        <p className="mt-2 text-[11.5px] text-muted">
+          영상은 나만 볼 수 있어요 · 최대 50MB
+        </p>
       </div>
     </section>
   );

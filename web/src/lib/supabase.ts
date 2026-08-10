@@ -305,6 +305,107 @@ export async function fetchMatches(id: string) {
   }[];
 }
 
+/* ── 미션 영상 (Storage) ── */
+
+const VIDEO_BUCKET = "mission-videos";
+export const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 버킷 설정과 같은 값
+
+/** 경로 규칙: {user_id}/{session_id}/{round}.{확장자}
+ *  첫 폴더가 업로더 uuid 라서 스토리지 정책이 남의 칸 쓰기를 막는다. */
+export async function uploadMissionVideo(
+  sessionId: string,
+  round: number,
+  file: File
+): Promise<{ path?: string; error?: string }> {
+  const sb = getSupabase();
+  const user = await currentUser();
+  if (!sb || !user) return { error: "no_auth" };
+  if (file.size > VIDEO_MAX_BYTES) return { error: "too_large" };
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
+  const path = `${user.id}/${sessionId}/${round}.${ext}`;
+
+  const { error } = await sb.storage
+    .from(VIDEO_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+  if (error) return { error: error.message };
+  return { path };
+}
+
+/** 비공개 버킷이라 재생은 서명 URL 로만 된다 (기본 1시간) */
+export async function signedVideoUrl(path: string, seconds = 3600) {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data } = await sb.storage.from(VIDEO_BUCKET).createSignedUrl(path, seconds);
+  return data?.signedUrl ?? null;
+}
+
+export async function fetchMyVideos() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_videos");
+  if (error) return null;
+  return data as {
+    session_id: string;
+    round: number;
+    video_url: string;
+    gym: string;
+    starts_at: string;
+  }[];
+}
+
+/* ── 채팅 ── */
+
+export interface Chat {
+  match_id: string;
+  session_id: string;
+  gym: string;
+  partner_id: string;
+  nickname: string;
+  age: number;
+  level: LevelId;
+  home_gym: string;
+  last_body: string | null;
+  last_at: string;
+}
+
+export interface ChatMessage {
+  id: number;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  mine: boolean;
+}
+
+export async function fetchChats() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_chats");
+  if (error) return null;
+  return data as Chat[];
+}
+
+export async function fetchChatMessages(matchId: string) {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("chat_messages", { p_match: matchId });
+  if (error) return null;
+  const d = data as ChatMessage[] | { error: string };
+  if (!Array.isArray(d)) return null;
+  return d;
+}
+
+export async function sendChat(matchId: string, body: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("chat_send", {
+    p_match: matchId,
+    p_body: body,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
 /* ── 프로필 목록 ── */
 
 export async function fetchPeople() {

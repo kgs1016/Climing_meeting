@@ -10,9 +10,12 @@ import {
   type MyProfile,
 } from "@/lib/myProfile";
 import {
+  PHOTO_MAX_BYTES,
   hasSupabase,
   currentUser,
   fetchMyProfileDb,
+  signedPhotoUrls,
+  uploadProfilePhoto,
   upsertMyProfileDb,
 } from "@/lib/supabase";
 
@@ -72,7 +75,34 @@ export default function ProfileNew() {
   const [mbti, setMbti] = useState("");
   const [intro, setIntro] = useState("");
 
+  const [photo, setPhoto] = useState<string | undefined>();
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  /** 고르는 즉시 올린다 — 저장 버튼에서 한꺼번에 올리면 실패 원인을 알기 어렵다 */
+  const pickPhoto = async (file: File) => {
+    if (file.size > PHOTO_MAX_BYTES) {
+      return alert(
+        `사진이 너무 커요 (${(file.size / 1024 / 1024).toFixed(1)}MB). 5MB 이하로 올려주세요.`
+      );
+    }
+    if (!hasSupabase()) {
+      // 목데이터 단계에선 미리보기만
+      setPhotoUrl(URL.createObjectURL(file));
+      setPhoto("local");
+      return;
+    }
+    setPhotoBusy(true);
+    const r = await uploadProfilePhoto(file);
+    if (r.error) {
+      setPhotoBusy(false);
+      return alert(`사진 업로드 실패: ${r.error}`);
+    }
+    setPhoto(r.path);
+    setPhotoUrl((await signedPhotoUrls([r.path!]))[r.path!] ?? null);
+    setPhotoBusy(false);
+  };
 
   useEffect(() => {
     (async () => {
@@ -100,6 +130,10 @@ export default function ProfileNew() {
       setHomeGym(p.homeGym);
       setMbti(p.mbti);
       setIntro(p.intro ?? "");
+      if (p.photo) {
+        setPhoto(p.photo);
+        setPhotoUrl((await signedPhotoUrls([p.photo]))[p.photo] ?? null);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -116,11 +150,13 @@ export default function ProfileNew() {
     homeGym: homeGym.trim(),
     mbti,
     intro: intro.trim() || undefined,
+    photo,
   });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const n = Number(age);
+    if (!photo) return alert("대표 사진을 1장 올려주세요");
     if (!nickname.trim()) return alert("닉네임을 입력해주세요");
     if (!n || n < 19 || n > 60) return alert("나이를 확인해주세요");
     if (!area.trim()) return alert("사는 동네를 입력해주세요");
@@ -170,11 +206,54 @@ export default function ProfileNew() {
       <p className="mb-5 rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
         여기 올린 프로필은 <b className="text-ink">사람 찾기 목록에 공개</b>돼요.
         모임 참여는 블라인드라 프로필이 공개되지 않아요.
-        <br />
-        📷 사진 등록은 다음 업데이트에서 열려요.
       </p>
 
       <form className="flex flex-col gap-6 pb-8" onSubmit={submit}>
+        {/* 대표 사진 — 사람 찾기의 첫인상이라 필수 */}
+        <Field label="대표 사진">
+          <div className="flex items-center gap-4">
+            <label className="relative shrink-0 cursor-pointer">
+              {photoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoUrl}
+                  alt="대표 사진"
+                  className="h-20 w-20 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-20 w-20 items-center justify-center rounded-full border border-dashed border-line bg-surface2 text-2xl">
+                  📷
+                </span>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                disabled={photoBusy}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (f) pickPhoto(f);
+                }}
+              />
+            </label>
+            <div className="min-w-0 flex-1 text-[12.5px] leading-relaxed text-muted">
+              {photoBusy ? (
+                <p className="font-bold text-ink">올리는 중…</p>
+              ) : (
+                <>
+                  <p className="font-bold text-ink">
+                    {photo ? "사진 바꾸기" : "얼굴이 보이는 사진 1장"}
+                  </p>
+                  <p className="mt-0.5">
+                    로그인한 사람에게만 보여요 · 최대 5MB
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
+        </Field>
+
         <Field label="닉네임">
           <input
             value={nickname}

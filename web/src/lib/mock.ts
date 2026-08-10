@@ -37,6 +37,7 @@ export interface Person {
   homeGym: string;
   mbti: string;
   area: string;
+  photo?: string;
 }
 
 export const MOCK_SESSIONS: Session[] = [

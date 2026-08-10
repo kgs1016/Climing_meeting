@@ -176,6 +176,7 @@ export async function fetchMyProfileDb(): Promise<(MyProfile & { isPublic: boole
     homeGym: data.home_gym,
     mbti: data.mbti ?? "",
     intro: data.intro ?? undefined,
+    photo: data.photo ?? undefined,
     isPublic: data.is_public,
   };
 }
@@ -196,6 +197,7 @@ export async function upsertMyProfileDb(p: MyProfile, isPublic: boolean) {
     home_gym: p.homeGym,
     mbti: p.mbti,
     intro: p.intro ?? null,
+    photo: p.photo ?? null,
     is_public: isPublic,
   });
   return { error: error?.message };
@@ -407,6 +409,44 @@ export async function sendChat(matchId: string, body: string) {
   return data as { ok?: boolean; error?: string };
 }
 
+/* ── 프로필 사진 ── */
+
+const PHOTO_BUCKET = "profile-photos";
+export const PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+
+export async function uploadProfilePhoto(
+  file: File
+): Promise<{ path?: string; error?: string }> {
+  const sb = getSupabase();
+  const user = await currentUser();
+  if (!sb || !user) return { error: "no_auth" };
+  if (file.size > PHOTO_MAX_BYTES) return { error: "too_large" };
+
+  const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const path = `${user.id}/avatar.${ext}`;
+  const { error } = await sb.storage
+    .from(PHOTO_BUCKET)
+    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+  if (error) return { error: error.message };
+  return { path };
+}
+
+/** 비공개 버킷이라 표시도 서명 URL 로만 된다. 목록은 한 번에 받아온다. */
+export async function signedPhotoUrls(
+  paths: string[],
+  seconds = 3600
+): Promise<Record<string, string>> {
+  const sb = getSupabase();
+  const uniq = [...new Set(paths.filter(Boolean))];
+  if (!sb || uniq.length === 0) return {};
+  const { data } = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(uniq, seconds);
+  const out: Record<string, string> = {};
+  for (const d of data ?? []) {
+    if (d.path && d.signedUrl) out[d.path] = d.signedUrl;
+  }
+  return out;
+}
+
 /* ── 관심 보내기 ── */
 
 export interface ReceivedRequest {
@@ -423,6 +463,7 @@ export interface ReceivedRequest {
   area: string;
   mbti: string;
   intro: string | null;
+  photo: string | null;
 }
 
 export interface SentRequest {
@@ -500,7 +541,9 @@ export async function fetchPeople() {
   if (!sb) return null;
   const { data, error } = await sb
     .from("profiles")
-    .select("id, nickname, age, gender, level, career, height, home_gym, mbti, area, intro")
+    .select(
+      "id, nickname, age, gender, level, career, height, home_gym, mbti, area, intro, photo"
+    )
     .eq("is_public", true)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -517,5 +560,6 @@ export async function fetchPeople() {
     mbti: (d.mbti ?? "") as string,
     area: d.area as string,
     intro: (d.intro ?? undefined) as string | undefined,
+    photo: (d.photo ?? undefined) as string | undefined,
   }));
 }

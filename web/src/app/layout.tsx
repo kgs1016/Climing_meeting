@@ -9,7 +9,9 @@ export const metadata: Metadata = {
   appleWebApp: {
     title: "호비데이",
     capable: true,
-    statusBarStyle: "black-translucent",
+    // black-translucent 는 콘텐츠를 상태바 아래로 밀지 않고 겹쳐 놔서
+    // 로고가 시계와 부딪혔다. black 은 상태바 영역을 따로 확보한다.
+    statusBarStyle: "black",
   },
 };
 

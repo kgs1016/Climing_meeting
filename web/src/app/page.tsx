@@ -15,6 +15,7 @@ import {
   fetchInboxCounts,
   fetchSentRequests,
   sendRequest,
+  signedPhotoUrls,
   toSession,
 } from "@/lib/supabase";
 
@@ -27,6 +28,7 @@ export default function Home() {
   const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
   const [people, setPeople] = useState<(Person & { intro?: string })[]>(MOCK_PEOPLE);
   const [live, setLive] = useState(false);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   // 관심 보내기
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
   const [counts, setCounts] = useState<Awaited<ReturnType<typeof fetchInboxCounts>>>(null);
@@ -60,7 +62,13 @@ export default function Home() {
         setSessions(rows.map((r) => toSession(r, prof?.homeGym)));
         setLive(true);
       }
-      if (ppl) setPeople(ppl);
+      if (ppl) {
+        setPeople(ppl);
+        // 비공개 버킷이라 표시용 서명 URL 을 한 번에 받아온다
+        setPhotoUrls(
+          await signedPhotoUrls(ppl.map((x) => x.photo).filter(Boolean) as string[])
+        );
+      }
 
       const [sent, c] = await Promise.all([fetchSentRequests(), fetchInboxCounts()]);
       if (sent) setSentTo(new Set(sent.map((s) => s.to_id)));
@@ -269,13 +277,22 @@ export default function Home() {
               key={p.id}
               className="flex items-center gap-3.5 rounded-2xl border border-line bg-surface p-4"
             >
-              <div
-                className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl ${
-                  p.gender === "f" ? "bg-female/15" : "bg-male/15"
-                }`}
-              >
-                🧗
-              </div>
+              {p.photo && photoUrls[p.photo] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoUrls[p.photo]}
+                  alt={p.nickname}
+                  className="h-14 w-14 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl ${
+                    p.gender === "f" ? "bg-female/15" : "bg-male/15"
+                  }`}
+                >
+                  🧗
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="font-extrabold text-[15px]">
                   {p.nickname}

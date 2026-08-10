@@ -10,6 +10,7 @@ import {
   fetchMySignups,
   fetchReceivedRequests,
   respondRequest,
+  signedPhotoUrls,
   type ReceivedRequest,
 } from "@/lib/supabase";
 
@@ -37,6 +38,7 @@ export default function Inbox() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [authed, setAuthed] = useState(true);
   const [received, setReceived] = useState<ReceivedRequest[] | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
 
   const respond = async (id: string, accept: boolean) => {
@@ -63,7 +65,12 @@ export default function Inbox() {
         setRows([]);
         return;
       }
-      setReceived(await fetchReceivedRequests());
+      const reqs = await fetchReceivedRequests();
+      setReceived(reqs);
+      if (reqs?.length)
+        setPhotoUrls(
+          await signedPhotoUrls(reqs.map((r) => r.photo).filter(Boolean) as string[])
+        );
       const data = await fetchMySignups();
       setRows(
         (data ?? []).map((d) => {
@@ -99,24 +106,40 @@ export default function Inbox() {
                 key={r.id}
                 className="rounded-2xl border border-accent/40 bg-accent/[0.06] p-4"
               >
-                <p className="text-[15px] font-extrabold">
-                  {r.nickname}
-                  <span className="ml-1.5 text-[12px] font-medium text-muted">
-                    {[r.age, r.height && `${r.height}cm`, r.area]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </span>
-                </p>
-                <p className="mt-0.5 text-[12.5px] text-muted">
-                  {[
-                    `L${r.level} ${level(r.level).name}`,
-                    careerLabel(r.career) && `구력 ${careerLabel(r.career)}`,
-                    r.home_gym,
-                    r.mbti,
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
+                <div className="flex items-center gap-3.5">
+                  {r.photo && photoUrls[r.photo] ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photoUrls[r.photo]}
+                      alt={r.nickname}
+                      className="h-14 w-14 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-surface2 text-xl">
+                      🧗
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-extrabold">
+                      {r.nickname}
+                      <span className="ml-1.5 text-[12px] font-medium text-muted">
+                        {[r.age, r.height && `${r.height}cm`, r.area]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </p>
+                    <p className="mt-0.5 text-[12.5px] text-muted">
+                      {[
+                        `L${r.level} ${level(r.level).name}`,
+                        careerLabel(r.career) && `구력 ${careerLabel(r.career)}`,
+                        r.home_gym,
+                        r.mbti,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
+                </div>
 
                 {r.message && (
                   <p className="mt-2.5 rounded-r-lg border-l-[3px] border-accent bg-surface2 px-3 py-2 text-[13px] leading-relaxed">

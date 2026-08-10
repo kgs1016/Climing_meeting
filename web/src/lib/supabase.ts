@@ -201,6 +201,112 @@ export async function upsertMyProfileDb(p: MyProfile, isPublic: boolean) {
   return { error: error?.message };
 }
 
+/* ── 모임 진행 (F 화면) ── */
+
+export interface RoomPartner {
+  id: string;
+  nickname: string;
+  age: number;
+  gender: "m" | "f";
+  level: LevelId;
+  career: CareerId | null;
+  height: number | null;
+  home_gym: string;
+  area: string;
+  mbti: string;
+  intro: string | null;
+}
+
+export interface RoomRound {
+  round: number;
+  starts_at: string;
+  card_open_at: string;
+  is_open: boolean;
+  /** 라운드가 열리기 전엔 서버가 null 로 내려준다 */
+  partner: RoomPartner | null;
+  mission_done: boolean;
+}
+
+export interface Room {
+  session: {
+    id: string;
+    gym: string;
+    starts_at: string;
+    ends_at: string;
+    capacity: 2 | 3;
+    intensity: "chill" | "hard";
+    after_meal: boolean;
+  };
+  me: { id: string; gender: "m" | "f"; level: LevelId; slot: number };
+  rounds: RoomRound[];
+  warmup_min: number;
+  room_ends_at: string;
+  selection_open: boolean;
+}
+
+export type RoomError =
+  | "no_profile"
+  | "not_found"
+  | "not_confirmed"
+  | "not_enough"
+  | "overflow";
+
+export async function fetchRoom(
+  id: string
+): Promise<{ room?: Room; error?: RoomError | string }> {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_room", { p_session: id });
+  if (error) return { error: error.message };
+  const d = data as Room & { error?: string };
+  if (d.error) return { error: d.error };
+  return { room: d };
+}
+
+export async function markMissionDone(id: string, round: number, video?: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("mission_done", {
+    p_session: id,
+    p_round: round,
+    p_video: video ?? null,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export async function submitSelection(id: string, chosen: string[]) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("selection_submit", {
+    p_session: id,
+    p_chosen: chosen,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; count?: number; error?: string };
+}
+
+/** 상호선택된 상대만 내려온다. 짝사랑은 서버가 아예 보내지 않는다. */
+export async function fetchMatches(id: string) {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_matches", { p_session: id });
+  if (error) return null;
+  return data as {
+    id: string;
+    nickname: string;
+    age: number;
+    level: LevelId;
+    career: CareerId | null;
+    home_gym: string;
+    area: string;
+    mbti: string;
+    intro: string | null;
+  }[];
+}
+
+/* ── 프로필 목록 ── */
+
 export async function fetchPeople() {
   const sb = getSupabase();
   if (!sb) return null;

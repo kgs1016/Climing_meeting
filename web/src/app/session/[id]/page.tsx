@@ -1,6 +1,7 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { levelRangeLabel, missionLevel } from "@/lib/levels";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
@@ -182,10 +183,18 @@ export default function SessionDetail({
       {/* 안내 */}
       <section className="mt-4 flex flex-col gap-2 text-[12.5px] leading-relaxed text-muted">
         <p>💰 일일권+신발 대여 3만원 내외 · 현장 각자 결제</p>
-        <p>🔒 노쇼 방지 보증금 1만원 · 참석 시 전액 환급</p>
         <p>👟 준비물: 운동복, 양말, 물 (신발은 대여 가능)</p>
         <p>✂️ 손톱은 짧게, 반지는 빼고 와주세요</p>
       </section>
+
+      {s.myStatus === "confirmed" && (
+        <Link
+          href={`/room/${s.id}`}
+          className="mt-5 block rounded-xl border border-accent/50 bg-accent/10 py-3.5 text-center text-[14.5px] font-bold text-accent"
+        >
+          🧗 모임 진행 화면 열기
+        </Link>
+      )}
 
       <button
         disabled={busy || joined}

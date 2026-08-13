@@ -146,9 +146,19 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
     load();
   };
 
+  /* 전체화면 오버레이로 띄운다.
+     레이아웃 래퍼가 하단 네비용 padding-bottom 을 갖고 있어서, 그 안에서
+     min-h-screen + sticky 로 입력창을 붙이면 화면 밖으로 밀려난다.
+     fixed inset-0 으로 빼면 높이 계산을 남과 맞출 필요가 없다. */
   return (
-    <main className="flex min-h-screen flex-col px-4">
-      <header className="flex items-center gap-3 pt-5 pb-3">
+    <div
+      className="fixed inset-0 z-40 mx-auto flex max-w-md flex-col bg-bg px-4"
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <header
+        className="flex shrink-0 items-center gap-3 pb-3"
+        style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top))" }}
+      >
         <button onClick={onBack} className="text-lg text-muted">
           ←
         </button>
@@ -162,7 +172,8 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto pb-3">
+      {/* min-h-0 이 없으면 flex 아이템이 내용만큼 커져서 스크롤이 안 걸린다 */}
+      <div className="min-h-0 flex-1 overflow-y-auto pb-3">
         {msgs === null ? (
           <p className="pt-10 text-center text-muted">불러오는 중…</p>
         ) : msgs.length === 0 ? (
@@ -197,13 +208,13 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         )}
       </div>
 
-      <form onSubmit={send} className="sticky bottom-0 flex gap-2 bg-bg py-3">
+      <form onSubmit={send} className="flex shrink-0 gap-2 bg-bg py-3">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="메시지 보내기"
           maxLength={1000}
-          className="flex-1 rounded-xl border border-line bg-surface px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
+          className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
         />
         <button
           disabled={busy || !text.trim()}
@@ -212,6 +223,6 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
           전송
         </button>
       </form>
-    </main>
+    </div>
   );
 }

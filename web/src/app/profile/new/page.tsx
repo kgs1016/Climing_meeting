@@ -12,6 +12,7 @@ import {
 import { isProfileComplete } from "@/lib/profileGate";
 import {
   PHOTO_MAX_BYTES,
+  claimProfileBonus,
   hasSupabase,
   currentUser,
   fetchMyProfileDb,
@@ -176,8 +177,15 @@ export default function ProfileNew() {
     if (hasSupabase()) {
       setBusy(true);
       const r = await upsertMyProfileDb(profile, true);
+      if (r.error) {
+        setBusy(false);
+        return alert(`저장 실패: ${r.error}`);
+      }
+      // 처음 완성한 경우에만 적립된다 (서버가 중복을 무시)
+      const bonus = await claimProfileBonus();
       setBusy(false);
-      if (r.error) return alert(`저장 실패: ${r.error}`);
+      if (bonus?.earned)
+        alert(`프로필 완성! 크레딧 +${bonus.earned}를 받았어요 🎉`);
     } else {
       saveMyProfile(profile);
     }

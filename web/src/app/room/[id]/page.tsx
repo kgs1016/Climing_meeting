@@ -163,6 +163,10 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     const r = await markMissionDone(id, round);
     setBusy(false);
     if (r.error) return alert(`실패: ${r.error}`);
+    if (r.earned)
+      alert(
+        `미션 완료! 크레딧 +${r.earned}\n영상까지 올리면 +20 더 받아요.\n현재 ${r.balance}크레딧`
+      );
     load();
   };
 
@@ -187,6 +191,8 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     const r = await markMissionDone(id, round, up.path);
     setUploading(null);
     if (r.error) return alert(`실패: ${r.error}`);
+    if (r.earned)
+      alert(`🎥 영상 미션 완료! 크레딧 +${r.earned}\n현재 ${r.balance}크레딧`);
     load();
   };
 

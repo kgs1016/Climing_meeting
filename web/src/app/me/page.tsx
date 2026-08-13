@@ -8,11 +8,14 @@ import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
 import {
+  CREDIT_LABELS,
   getSupabase,
   hasSupabase,
   currentUser,
+  fetchCredits,
   fetchMyProfileDb,
   fetchMyVideos,
+  type Credits,
 } from "@/lib/supabase";
 
 export default function Me() {
@@ -20,6 +23,8 @@ export default function Me() {
   const [email, setEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [videoCount, setVideoCount] = useState(0);
+  const [credits, setCredits] = useState<Credits | null>(null);
+  const [showCredits, setShowCredits] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,9 +41,14 @@ export default function Me() {
         return;
       }
       setEmail(user.email ?? "");
-      const [prof, vids] = await Promise.all([fetchMyProfileDb(), fetchMyVideos()]);
+      const [prof, vids, cr] = await Promise.all([
+        fetchMyProfileDb(),
+        fetchMyVideos(),
+        fetchCredits(),
+      ]);
       setProfile(prof);
       setVideoCount(vids?.length ?? 0);
+      setCredits(cr);
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -105,15 +115,54 @@ export default function Me() {
           )}
 
           <section className="mt-4 grid grid-cols-2 gap-2">
-            <div className="rounded-2xl border border-line bg-surface p-4">
-              <p className="text-[12px] font-semibold text-muted">크레딧</p>
-              <p className="mt-1 text-[19px] font-extrabold text-mint">0</p>
-            </div>
+            <button
+              onClick={() => setShowCredits((v) => !v)}
+              className="rounded-2xl border border-line bg-surface p-4 text-left"
+            >
+              <p className="text-[12px] font-semibold text-muted">
+                크레딧 {credits && credits.history.length > 0 && (showCredits ? "▾" : "▸")}
+              </p>
+              <p className="mt-1 text-[19px] font-extrabold text-mint">
+                {credits?.balance ?? 0}
+              </p>
+            </button>
             <div className="rounded-2xl border border-line bg-surface p-4">
               <p className="text-[12px] font-semibold text-muted">내 영상</p>
               <p className="mt-1 text-[19px] font-extrabold">🎥 {videoCount}</p>
             </div>
           </section>
+
+          {showCredits && credits && (
+            <section className="mt-2 overflow-hidden rounded-2xl border border-line bg-surface">
+              {credits.history.length === 0 ? (
+                <p className="px-4 py-4 text-[12.5px] leading-relaxed text-muted">
+                  아직 내역이 없어요. 모임에서 미션을 하면 쌓여요 — 영상까지
+                  올리면 더 많이 받아요.
+                </p>
+              ) : (
+                credits.history.map((h, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between border-b border-line px-4 py-2.5 last:border-b-0"
+                  >
+                    <span className="text-[13px]">
+                      {CREDIT_LABELS[h.reason] ?? h.reason}
+                    </span>
+                    <span
+                      className={`text-[13px] font-extrabold ${
+                        h.delta > 0 ? "text-mint" : "text-muted"
+                      }`}
+                    >
+                      {h.delta > 0 ? `+${h.delta}` : h.delta}
+                    </span>
+                  </div>
+                ))
+              )}
+              <p className="border-t border-line px-4 py-2.5 text-[11.5px] leading-relaxed text-muted">
+                하루 관심 5회를 다 쓰면, 크레딧 30으로 한 번 더 보낼 수 있어요.
+              </p>
+            </section>
+          )}
 
           <section className="mt-4 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
             <Link

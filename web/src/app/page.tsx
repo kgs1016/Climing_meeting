@@ -90,7 +90,6 @@ export default function Home() {
     same_gender: "이성에게만 보낼 수 있어요",
     not_public: "상대가 프로필을 내렸어요",
     no_profile: "먼저 내 프로필을 만들어주세요",
-    limit: "오늘 보낼 수 있는 관심을 다 썼어요. 내일 다시 시도해주세요",
   };
 
   const sendReq = async () => {
@@ -98,11 +97,25 @@ export default function Home() {
     setReqBusy(true);
     const r = await sendRequest(reqTarget.id, reqMsg);
     setReqBusy(false);
+
+    if (r.error === "limit") {
+      // 한도를 넘겼고 크레딧도 부족한 경우 — 얼마가 모자란지 알려준다
+      return alert(
+        `오늘 관심 ${r.limit}회를 다 썼어요.\n` +
+          `크레딧 ${r.cost}로 한 번 더 보낼 수 있는데, 지금 ${r.balance}크레딧이에요.\n` +
+          `모임에서 미션을 하면 쌓여요.`
+      );
+    }
     if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);
+
     setSentTo((s) => new Set(s).add(reqTarget.id));
     setCounts((c) => (c ? { ...c, sent_today: c.sent_today + 1 } : c));
     setReqTarget(null);
-    alert(`${reqTarget.nickname}님에게 관심을 보냈어요!\n수락하면 채팅이 열려요.`);
+    alert(
+      r.spent
+        ? `${reqTarget.nickname}님에게 관심을 보냈어요!\n크레딧 -${r.cost} (남은 ${r.balance})`
+        : `${reqTarget.nickname}님에게 관심을 보냈어요!\n수락하면 채팅이 열려요.`
+    );
   };
 
   // 프로필 작성 화면으로 넘어가는 중

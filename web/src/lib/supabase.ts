@@ -274,7 +274,7 @@ export async function markMissionDone(id: string, round: number, video?: string)
     p_video: video ?? null,
   });
   if (error) return { error: error.message };
-  return data as { ok?: boolean; error?: string };
+  return data as { ok?: boolean; error?: string; earned?: number; balance?: number };
 }
 
 export async function submitSelection(id: string, chosen: string[]) {
@@ -449,6 +449,37 @@ export async function signedPhotoUrls(
   return out;
 }
 
+/* ── 크레딧 ── */
+
+export const CREDIT_LABELS: Record<string, string> = {
+  mission_video: "🎥 영상 미션",
+  mission_done: "✅ 미션 완료",
+  profile_complete: "🧗 프로필 완성",
+  request_extra: "💌 관심 추가 발송",
+};
+
+export interface Credits {
+  balance: number;
+  history: { delta: number; reason: string; created_at: string }[];
+}
+
+export async function fetchCredits() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_credits");
+  if (error) return null;
+  return data as Credits;
+}
+
+/** 프로필을 처음 완성했을 때 한 번 적립된다 (중복 호출은 서버가 무시) */
+export async function claimProfileBonus() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("claim_profile_bonus");
+  if (error) return null;
+  return data as { ok?: boolean; earned?: number; balance?: number; error?: string };
+}
+
 /* ── 관심 보내기 ── */
 
 export interface ReceivedRequest {
@@ -493,6 +524,10 @@ export async function sendRequest(toId: string, message?: string) {
     error?: string;
     status?: string;
     limit?: number;
+    /** 하루 한도를 넘겨 크레딧으로 보냈는지 */
+    spent?: boolean;
+    cost?: number;
+    balance?: number;
   };
 }
 

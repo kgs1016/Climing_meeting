@@ -130,9 +130,30 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
     return () => clearInterval(t);
   }, [load]);
 
+  /* 키보드가 올라오면 iOS 는 fixed 요소를 줄이지 않고 화면을 스크롤한다.
+     그러면 입력창만 보이고 헤더·대화가 화면 밖으로 밀려난다.
+     visualViewport 로 "실제 보이는 영역"을 받아 그 높이에 맞춘다. */
+  const [vv, setVv] = useState<{ h: number; top: number } | null>(null);
+
+  useEffect(() => {
+    const v = window.visualViewport;
+    if (!v) return; // 미지원 브라우저는 h-dvh 폴백
+    const update = () => setVv({ h: v.height, top: v.offsetTop });
+    update();
+    v.addEventListener("resize", update);
+    v.addEventListener("scroll", update);
+    return () => {
+      v.removeEventListener("resize", update);
+      v.removeEventListener("scroll", update);
+    };
+  }, []);
+
+  // 키보드가 열렸으면 홈바 여백을 넣지 않는다 (키보드 위에 빈 틈이 생김)
+  const keyboardOpen = !!vv && vv.h < window.innerHeight - 100;
+
   useEffect(() => {
     bottom.current?.scrollIntoView({ block: "end" });
-  }, [msgs?.length]);
+  }, [msgs?.length, vv?.h]);
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,15 +170,23 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   /* 전체화면 오버레이로 띄운다.
      레이아웃 래퍼가 하단 네비용 padding-bottom 을 갖고 있어서, 그 안에서
      min-h-screen + sticky 로 입력창을 붙이면 화면 밖으로 밀려난다.
-     fixed inset-0 으로 빼면 높이 계산을 남과 맞출 필요가 없다. */
+     높이는 visualViewport 값으로 직접 지정한다 (inset-0 은 키보드를 모른다). */
   return (
     <div
-      className="fixed inset-0 z-40 mx-auto flex max-w-md flex-col bg-bg px-4"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      className="fixed inset-x-0 top-0 z-40 mx-auto flex h-dvh max-w-md flex-col bg-bg px-4"
+      style={{
+        height: vv ? `${vv.h}px` : undefined,
+        transform: vv ? `translateY(${vv.top}px)` : undefined,
+        paddingBottom: keyboardOpen ? 0 : "env(safe-area-inset-bottom)",
+      }}
     >
       <header
         className="flex shrink-0 items-center gap-3 pb-3"
-        style={{ paddingTop: "calc(1.25rem + env(safe-area-inset-top))" }}
+        style={{
+          paddingTop: keyboardOpen
+            ? "0.75rem"
+            : "calc(1.25rem + env(safe-area-inset-top))",
+        }}
       >
         <button onClick={onBack} className="text-lg text-muted">
           ←

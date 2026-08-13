@@ -368,8 +368,10 @@ export interface Chat {
   age: number;
   level: LevelId;
   home_gym: string;
+  photo: string | null;
   last_body: string | null;
   last_at: string;
+  unread: number;
 }
 
 export interface ChatMessage {
@@ -531,7 +533,20 @@ export async function fetchInboxCounts() {
   if (!sb) return null;
   const { data, error } = await sb.rpc("inbox_counts");
   if (error) return null;
-  return data as { requests: number; sent_today: number; daily_limit: number };
+  return data as {
+    requests: number;
+    sent_today: number;
+    daily_limit: number;
+    unread_messages: number;
+    unread_rooms: number;
+  };
+}
+
+/** 방을 열면 호출 — 이 시점 이후 메시지만 안 읽음으로 센다 */
+export async function markChatRead(matchId: string) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.rpc("chat_mark_read", { p_match: matchId });
 }
 
 /* ── 프로필 목록 ── */

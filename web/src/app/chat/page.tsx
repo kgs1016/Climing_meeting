@@ -8,7 +8,9 @@ import {
   fetchChatMessages,
   fetchChats,
   hasSupabase,
+  markChatRead,
   sendChat,
+  signedPhotoUrls,
   type Chat,
   type ChatMessage,
 } from "@/lib/supabase";
@@ -31,16 +33,35 @@ const origin = (c: Chat) =>
 export default function ChatPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [chats, setChats] = useState<Chat[] | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Chat | null>(null);
+
+  const load = useCallback(async () => {
+    const list = await fetchChats();
+    setChats(list);
+    if (list?.length)
+      setPhotoUrls(
+        await signedPhotoUrls(list.map((c) => c.photo).filter(Boolean) as string[])
+      );
+  }, []);
 
   useEffect(() => {
     (async () => {
       if (!hasSupabase()) return setAuthed(false);
       const user = await currentUser();
       setAuthed(!!user);
-      if (user) setChats(await fetchChats());
+      if (user) load();
     })();
-  }, []);
+  }, [load]);
+
+  /** 방을 열면 읽음으로 표시한다 (목록의 배지가 바로 사라지게 낙관적 갱신) */
+  const openThread = async (c: Chat) => {
+    setOpen(c);
+    setChats((list) =>
+      (list ?? []).map((x) => (x.match_id === c.match_id ? { ...x, unread: 0 } : x))
+    );
+    await markChatRead(c.match_id);
+  };
 
   if (authed === false)
     return (
@@ -60,7 +81,16 @@ export default function ChatPage() {
       </main>
     );
 
-  if (open) return <Thread chat={open} onBack={() => setOpen(null)} />;
+  if (open)
+    return (
+      <Thread
+        chat={open}
+        onBack={() => {
+          setOpen(null);
+          load(); // 나올 때 목록·마지막 메시지 갱신
+        }}
+      />
+    );
 
   return (
     <main className="px-4">
@@ -85,12 +115,21 @@ export default function ChatPage() {
           {chats.map((c) => (
             <button
               key={c.match_id}
-              onClick={() => setOpen(c)}
+              onClick={() => openThread(c)}
               className="flex items-center gap-3.5 rounded-2xl border border-line bg-surface p-4 text-left"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xl">
-                🧗
-              </div>
+              {c.photo && photoUrls[c.photo] ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={photoUrls[c.photo]}
+                  alt={c.nickname}
+                  className="h-12 w-12 shrink-0 rounded-full object-cover"
+                />
+              ) : (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent/15 text-xl">
+                  🧗
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="text-[15px] font-extrabold">
                   {c.nickname}
@@ -98,13 +137,22 @@ export default function ChatPage() {
                     {c.age} · L{c.level} {level(c.level).name}
                   </span>
                 </p>
-                <p className="mt-0.5 truncate text-[12.5px] text-muted">
+                <p
+                  className={`mt-0.5 truncate text-[12.5px] ${
+                    c.unread > 0 ? "font-semibold text-ink" : "text-muted"
+                  }`}
+                >
                   {c.last_body ?? origin(c)}
                 </p>
               </div>
-              <span className="shrink-0 text-[11.5px] text-muted">
-                {when(c.last_at)}
-              </span>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="text-[11.5px] text-muted">{when(c.last_at)}</span>
+                {c.unread > 0 && (
+                  <span className="min-w-[18px] rounded-full bg-accent px-1.5 text-center text-[11px] font-extrabold leading-[18px] text-white">
+                    {c.unread > 99 ? "99+" : c.unread}
+                  </span>
+                )}
+              </div>
             </button>
           ))}
         </div>
@@ -121,6 +169,8 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
 
   const load = useCallback(async () => {
     setMsgs(await fetchChatMessages(chat.match_id));
+    // 방을 보고 있는 동안 도착한 메시지도 읽음 처리한다
+    await markChatRead(chat.match_id);
   }, [chat.match_id]);
 
   useEffect(() => {

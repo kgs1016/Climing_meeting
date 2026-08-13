@@ -214,7 +214,7 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
           onChange={(e) => setText(e.target.value)}
           placeholder="메시지 보내기"
           maxLength={1000}
-          className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
+          className="min-w-0 flex-1 rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/60"
         />
         <button
           disabled={busy || !text.trim()}

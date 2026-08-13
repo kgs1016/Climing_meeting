@@ -26,3 +26,12 @@ body {
     system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+/* iOS 사파리는 글자가 16px 미만인 입력창에 포커스하면 화면을 강제로 확대한다.
+   되돌리기가 안 돼서 입력 내용이 안 보인다. 앞으로 추가되는 입력창의 기본값.
+   (Tailwind 의 text-[..] 유틸리티가 더 우선하므로, 각 입력창에도 16px 를 명시해둔다) */
+input,
+textarea,
+select {
+  font-size: 16px;
+}

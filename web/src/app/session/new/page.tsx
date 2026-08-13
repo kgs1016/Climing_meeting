@@ -63,7 +63,8 @@ function Chip({
 }
 
 const inputCls =
-  "rounded-xl border border-line bg-surface px-3 py-2.5 text-[13.5px] text-ink [color-scheme:dark]";
+  // iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 — 16px 유지
+  "w-full rounded-xl border border-line bg-surface px-3 py-2.5 text-[16px] text-ink [color-scheme:dark]";
 
 export default function NewSession() {
   const router = useRouter();
@@ -283,7 +284,7 @@ export default function NewSession() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="예: 가볍게 타고 맛있는 거 먹어요"
-            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
+            className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/60"
           />
         </Field>
 

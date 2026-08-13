@@ -378,7 +378,7 @@ export default function Home() {
               onChange={(e) => setReqMsg(e.target.value.slice(0, 200))}
               rows={3}
               placeholder={`예: 같은 ${reqTarget.homeGym} 다니네요! 주말에 같이 타요`}
-              className="mt-3 w-full resize-none rounded-xl border border-line bg-surface2 px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60"
+              className="mt-3 w-full resize-none rounded-xl border border-line bg-surface2 px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/60"
             />
             <p className="mt-1 text-right text-[11.5px] text-muted">
               {reqMsg.length}/200

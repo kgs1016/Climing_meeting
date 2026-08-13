@@ -59,7 +59,8 @@ function Chip({
 }
 
 const inputCls =
-  "w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[14px] text-ink placeholder:text-muted/60";
+  // iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 — 16px 유지
+  "w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/60";
 
 export default function ProfileNew() {
   const router = useRouter();

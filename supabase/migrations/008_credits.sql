@@ -36,10 +36,16 @@ create or replace function credit_rule(p_reason text) returns int
   select case p_reason
     when 'mission_video'    then 20   -- 영상까지 올린 미션
     when 'mission_done'     then 5    -- 영상 없이 완료 체크
-    when 'profile_complete' then 30   -- 프로필 첫 완성
-    when 'request_extra'    then -30  -- 관심 추가 1회
+    -- 가입 보너스. 무료 관심이 없으므로, 첫 모임에 나가기 전까지
+    -- 아무도 못 만나고 막히지 않도록 관심 3회분을 준다.
+    when 'profile_complete' then 100
+    when 'request_extra'    then -30  -- 관심 1회
     else 0
   end $$;
+
+-- 무료 제공분. 0 = 관심은 전부 크레딧으로만.
+create or replace function request_daily_limit() returns int
+  language sql immutable as $$ select 0 $$;
 
 -- 내부용 적립 함수.
 -- 이미 있는 (reason, ref) 면 0 을 반환한다 — 실제로 적립된 금액만 돌려줘야
@@ -137,11 +143,11 @@ begin
   select count(*) into sent_today from requests
    where from_id = me.id and created_at > now() - interval '1 day';
 
+  -- 무료 제공분(기본 0)을 넘으면 크레딧으로 차감한다
   if sent_today >= request_daily_limit() then
     bal := credit_balance(me.id);
     if bal < cost then
-      return json_build_object('error','limit',
-        'limit', request_daily_limit(), 'cost', cost, 'balance', bal);
+      return json_build_object('error','no_credits', 'cost', cost, 'balance', bal);
     end if;
     -- ref 를 매번 다르게 둬야 여러 번 차감된다
     insert into credit_ledger (user_id, delta, reason, ref)
@@ -154,7 +160,7 @@ begin
   values (me.id, p_to, nullif(trim(p_message), ''));
 
   return json_build_object('ok', true,
-    'left', greatest(0, request_daily_limit() - sent_today - 1),
+    'free_left', greatest(0, request_daily_limit() - sent_today - 1),
     'spent', spent, 'cost', case when spent then cost else 0 end,
     'balance', credit_balance(me.id));
 end; $$;

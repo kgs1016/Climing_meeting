@@ -15,11 +15,14 @@ import {
   fetchSessions,
   fetchPeople,
   fetchMyProfileDb,
+  REQUEST_COST,
+  fetchCredits,
   fetchInboxCounts,
   fetchSentRequests,
   sendRequest,
   signedPhotoUrls,
   toSession,
+  type Credits,
 } from "@/lib/supabase";
 
 const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
@@ -35,6 +38,7 @@ export default function Home() {
   const [live, setLive] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   // 관심 보내기
+  const [credits, setCredits] = useState<Credits | null>(null);
   const [sentTo, setSentTo] = useState<Set<string>>(new Set());
   const [counts, setCounts] = useState<Awaited<ReturnType<typeof fetchInboxCounts>>>(null);
   const [reqTarget, setReqTarget] = useState<Person | null>(null);
@@ -79,9 +83,14 @@ export default function Home() {
         );
       }
 
-      const [sent, c] = await Promise.all([fetchSentRequests(), fetchInboxCounts()]);
+      const [sent, c, cr] = await Promise.all([
+        fetchSentRequests(),
+        fetchInboxCounts(),
+        fetchCredits(),
+      ]);
       if (sent) setSentTo(new Set(sent.map((s) => s.to_id)));
       if (c) setCounts(c);
+      if (cr) setCredits(cr);
     })();
   }, []);
 
@@ -98,23 +107,22 @@ export default function Home() {
     const r = await sendRequest(reqTarget.id, reqMsg);
     setReqBusy(false);
 
-    if (r.error === "limit") {
-      // 한도를 넘겼고 크레딧도 부족한 경우 — 얼마가 모자란지 알려준다
+    if (r.error === "no_credits") {
       return alert(
-        `오늘 관심 ${r.limit}회를 다 썼어요.\n` +
-          `크레딧 ${r.cost}로 한 번 더 보낼 수 있는데, 지금 ${r.balance}크레딧이에요.\n` +
-          `모임에서 미션을 하면 쌓여요.`
+        `크레딧이 부족해요.\n` +
+          `관심 1회 = ${r.cost}크레딧 · 지금 ${r.balance}크레딧이에요.\n\n` +
+          `모임에서 미션을 하면 쌓여요 (영상까지 올리면 +20).`
       );
     }
     if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);
 
     setSentTo((s) => new Set(s).add(reqTarget.id));
-    setCounts((c) => (c ? { ...c, sent_today: c.sent_today + 1 } : c));
+    if (typeof r.balance === "number")
+      setCredits((c) => (c ? { ...c, balance: r.balance! } : c));
     setReqTarget(null);
     alert(
-      r.spent
-        ? `${reqTarget.nickname}님에게 관심을 보냈어요!\n크레딧 -${r.cost} (남은 ${r.balance})`
-        : `${reqTarget.nickname}님에게 관심을 보냈어요!\n수락하면 채팅이 열려요.`
+      `${reqTarget.nickname}님에게 관심을 보냈어요!\n` +
+        (r.spent ? `크레딧 -${r.cost} (남은 ${r.balance})` : "수락하면 채팅이 열려요.")
     );
   };
 
@@ -296,12 +304,9 @@ export default function Home() {
           <p className="rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
             관심을 보내면 상대 신청함에 도착해요. 상대가 수락하면{" "}
             <b className="text-ink">채팅이 열려요.</b>
-            {counts && (
-              <>
-                <br />
-                오늘 {counts.daily_limit - counts.sent_today}번 더 보낼 수 있어요.
-              </>
-            )}
+            <br />
+            관심 1회 = <b className="text-mint">{REQUEST_COST}크레딧</b>
+            {credits && ` · 내 크레딧 ${credits.balance}`}
           </p>
 
           {people.map((p) => (
@@ -401,8 +406,13 @@ export default function Home() {
               onClick={sendReq}
               className="mt-2 w-full rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white disabled:opacity-50"
             >
-              {reqBusy ? "보내는 중…" : "관심 보내기"}
+              {reqBusy ? "보내는 중…" : `관심 보내기 (${REQUEST_COST}크레딧)`}
             </button>
+            {credits && (
+              <p className="mt-1.5 text-center text-[11.5px] text-muted">
+                보내면 {Math.max(0, credits.balance - REQUEST_COST)}크레딧 남아요
+              </p>
+            )}
             <button
               onClick={() => setReqTarget(null)}
               className="mt-2 w-full py-2 text-[13px] font-semibold text-muted"

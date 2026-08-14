@@ -458,6 +458,10 @@ export const CREDIT_LABELS: Record<string, string> = {
   request_extra: "💌 관심 추가 발송",
 };
 
+/** 관심 1회 비용 — 서버 credit_rule('request_extra') 과 같은 값이어야 한다.
+ *  표시용이고, 실제 차감은 서버가 한다. */
+export const REQUEST_COST = 30;
+
 export interface Credits {
   balance: number;
   history: { delta: number; reason: string; created_at: string }[];

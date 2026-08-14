@@ -9,6 +9,7 @@ import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
 import {
   CREDIT_LABELS,
+  REQUEST_COST,
   getSupabase,
   hasSupabase,
   currentUser,
@@ -159,7 +160,8 @@ export default function Me() {
                 ))
               )}
               <p className="border-t border-line px-4 py-2.5 text-[11.5px] leading-relaxed text-muted">
-                하루 관심 5회를 다 쓰면, 크레딧 30으로 한 번 더 보낼 수 있어요.
+                관심 1회에 {REQUEST_COST}크레딧을 써요. 모임에서 미션을 하면
+                쌓여요 — 영상까지 올리면 한 번에 25.
               </p>
             </section>
           )}

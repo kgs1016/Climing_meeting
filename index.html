@@ -355,7 +355,6 @@
     </p>
     <a class="cta" href="#" data-apply>지금 사전 가입하기</a>
     <p class="cta-note">가입 1분 · 카카오 · 구글 · 이메일로 시작</p>
-    <p id="slots" class="cta-note" style="margin-top:6px"></p>
 
     <p class="brand-note">
       <b>HOBIDAY</b>는 Hobby + Holiday.<br>
@@ -374,28 +373,9 @@
   // ⚙️ 여기만 바꾸면 됩니다: CTA가 향하는 곳 (기본값 = 같은 도메인의 앱 홈)
   const APPLY_URL = "/login";   // 사전 모집기에는 가입 화면으로 바로 보낸다
 
-  // 선착순 남은 자리 — 집계 수치만 내려오는 함수를 읽는다
-  (function(){
-    var SB = "https://loigwslmwvltdurjttpe.supabase.co";
-    var KEY = "sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_";
-    fetch(SB + "/rest/v1/rpc/early_bird_status", {
-      method: "POST",
-      headers: { apikey: KEY, Authorization: "Bearer " + KEY, "Content-Type": "application/json" },
-      body: "{}"
-    })
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if (!d || typeof d.slots !== "number") return;
-        var m = Math.max(0, d.slots - d.taken_m);
-        var f = Math.max(0, d.slots - d.taken_f);
-        var el = document.getElementById("slots");
-        if (!el) return;
-        el.innerHTML = (m + f === 0)
-          ? "선착순 마감 · 지금 가입하면 3,000 크레딧"
-          : "남은 자리 <b>남 " + m + "명 · 여 " + f + "명</b>";
-      })
-      .catch(function(){ /* 실패하면 그냥 표시하지 않는다 */ });
-  })();
+  // 선착순 남은 자리는 랜딩에 노출하지 않는다.
+  // 초기엔 "남 30명 남음" 이 곧 "아무도 안 왔다" 는 신호가 되어 역효과다.
+  // 현황은 대시보드에서 확인한다 (early_bird_status).
 
   document.querySelectorAll("[data-apply]").forEach(function(btn){
     btn.href = APPLY_URL;

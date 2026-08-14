@@ -27,7 +27,8 @@ create or replace function credit_rule(p_reason text) returns int
 create or replace function early_bird_slots() returns int
   language sql immutable as $$ select 30 $$;
 
--- 남은 자리 (랜딩페이지에서 쓰므로 anon 도 호출 가능 — 집계 수치만 나간다)
+-- 남은 자리 — 운영자 확인용. 랜딩에 노출하지 않으므로 anon 에게 열지 않는다.
+-- (초기엔 "남 30명 남음" 이 곧 "아무도 안 왔다" 는 신호가 되어 역효과)
 create or replace function early_bird_status()
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object(
@@ -105,9 +106,11 @@ $$;
 revoke execute on function credit_rule(text)       from public, anon, authenticated;
 revoke execute on function early_bird_slots()      from public, anon, authenticated;
 revoke execute on function claim_profile_bonus()   from public, anon;
-revoke execute on function early_bird_status()     from public;
+revoke execute on function early_bird_status()     from public, anon;
 revoke execute on function app_flags()             from public;
 
 grant execute on function claim_profile_bonus() to authenticated;
--- 랜딩페이지가 로그인 없이 읽는다 (집계·플래그뿐)
-grant execute on function early_bird_status(), app_flags() to anon, authenticated;
+-- 선착순 현황은 운영자만 (대시보드 SQL Editor 에서 조회)
+grant execute on function early_bird_status() to authenticated;
+-- 잠금 플래그는 로그인 전 화면에서도 읽어야 한다
+grant execute on function app_flags() to anon, authenticated;

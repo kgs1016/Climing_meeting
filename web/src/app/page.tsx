@@ -15,6 +15,7 @@ import {
   fetchSessions,
   fetchPeople,
   fetchMyProfileDb,
+  CREDIT_MISSION_VIDEO,
   REQUEST_COST,
   fetchAppFlags,
   fetchCredits,
@@ -132,8 +133,8 @@ export default function Home() {
     if (r.error === "no_credits") {
       return alert(
         `크레딧이 부족해요.\n` +
-          `관심 1회 = ${r.cost}크레딧 · 지금 ${r.balance}크레딧이에요.\n\n` +
-          `모임에서 미션을 하면 쌓여요 (영상까지 올리면 +20).`
+          `관심 1회 = ${r.cost?.toLocaleString()}크레딧 · 지금 ${r.balance?.toLocaleString()}크레딧이에요.\n\n` +
+          `모임에서 미션을 하면 쌓여요 (영상까지 올리면 +${CREDIT_MISSION_VIDEO.toLocaleString()}).`
       );
     }
     if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);
@@ -268,7 +269,7 @@ export default function Home() {
             href="/intro.html"
             className="rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-muted"
           >
-            호비데이가 뭔가요?
+            하비데이가 뭔가요?
           </Link>
         </div>
 

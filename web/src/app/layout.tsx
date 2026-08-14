@@ -3,11 +3,11 @@ import "./globals.css";
 import BottomNav from "@/components/BottomNav";
 
 export const metadata: Metadata = {
-  title: "호비데이 HOBIDAY",
+  title: "하비데이 HOBIDAY",
   description: "취미로 시작해서, 사람으로 끝나는 하루 — 볼더링 세션 매칭",
   // 홈 화면에 추가했을 때 주소창 없이 앱처럼 뜨게 한다
   appleWebApp: {
-    title: "호비데이",
+    title: "하비데이",
     capable: true,
     // black-translucent 는 콘텐츠를 상태바 아래로 밀지 않고 겹쳐 놔서
     // 로고가 시계와 부딪혔다. black 은 상태바 영역을 따로 확보한다.

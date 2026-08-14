@@ -4,8 +4,8 @@ import type { MetadataRoute } from "next";
    앱스토어 배포 없이 아이폰·안드로이드에서 앱처럼 쓰기 위한 최소 구성. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "호비데이 HOBIDAY",
-    short_name: "호비데이",
+    name: "하비데이 HOBIDAY",
+    short_name: "하비데이",
     description: "취미로 시작해서, 사람으로 끝나는 하루 — 볼더링 모임 매칭",
     start_url: "/",
     display: "standalone", // 주소창·탭 숨김

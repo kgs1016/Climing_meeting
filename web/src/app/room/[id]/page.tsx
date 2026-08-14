@@ -6,6 +6,7 @@ import { careerLabel, level, missionLevel } from "@/lib/levels";
 import { buildCard, type CardProfile, type Tier } from "@/lib/matchCard";
 import { DEMO_ID, DEMO_ME, buildDemoRoom, demoMatches } from "@/lib/roomDemo";
 import {
+  CREDIT_MISSION_VIDEO,
   VIDEO_MAX_BYTES,
   fetchMatches,
   fetchMyProfileDb,
@@ -165,7 +166,9 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     if (r.error) return alert(`실패: ${r.error}`);
     if (r.earned)
       alert(
-        `미션 완료! 크레딧 +${r.earned}\n영상까지 올리면 +20 더 받아요.\n현재 ${r.balance}크레딧`
+        `미션 완료! 크레딧 +${r.earned.toLocaleString()}\n` +
+          `영상까지 올리면 +${CREDIT_MISSION_VIDEO.toLocaleString()} 더 받아요.\n` +
+          `현재 ${r.balance?.toLocaleString()}크레딧`
       );
     load();
   };
@@ -192,7 +195,10 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
     setUploading(null);
     if (r.error) return alert(`실패: ${r.error}`);
     if (r.earned)
-      alert(`🎥 영상 미션 완료! 크레딧 +${r.earned}\n현재 ${r.balance}크레딧`);
+      alert(
+        `🎥 영상 미션 완료! 크레딧 +${r.earned.toLocaleString()}\n` +
+          `현재 ${r.balance?.toLocaleString()}크레딧`
+      );
     load();
   };
 

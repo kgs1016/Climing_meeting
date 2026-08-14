@@ -188,12 +188,14 @@ begin
 end; $$;
 
 -- ───────────────────────────────────────────────────────────────
---  6. 프로필 완성 → 가입 보너스 + 선착순
+--  6. 프로필 완성 → 가입 보너스
 -- ───────────────────────────────────────────────────────────────
--- 성별을 나누지 않으면 한쪽이 자리를 다 차지해서 2:2 조차 못 만든다.
+-- 선착순은 여기서 자동 지급하지 않는다.
+-- 가입 시점에 "내가 선착순에 들었는지" 가 드러나면 가입자가 자리 상황을
+-- 역산할 수 있어, 운영자가 모집을 마감한 뒤 직접 지급한다 (아래 9번 참고).
 create or replace function claim_profile_bonus()
 returns json language plpgsql security definer set search_path = public as $$
-declare me profiles; earned int := 0; taken int; early int := 0;
+declare me profiles; earned int := 0;
 begin
   select * into me from profiles where id = auth.uid();
   if not found then return json_build_object('error','no_profile'); end if;
@@ -203,19 +205,7 @@ begin
 
   earned := credit_grant(me.id, 'profile_complete');
 
-  -- 동시 가입이 같은 자리를 함께 통과하지 못하게 성별로 잠근다
-  perform pg_advisory_xact_lock(hashtext('early_bird:' || me.gender));
-
-  select count(*) into taken
-    from credit_ledger l join profiles p on p.id = l.user_id
-   where l.reason = 'early_bird' and p.gender = me.gender;
-
-  if taken < early_bird_slots() then
-    early := credit_grant(me.id, 'early_bird');
-    earned := earned + early;
-  end if;
-
-  return json_build_object('ok', true, 'earned', earned, 'early_bird', early > 0,
+  return json_build_object('ok', true, 'earned', earned,
                            'balance', credit_balance(me.id));
 end; $$;
 
@@ -273,3 +263,34 @@ grant execute on function
 to authenticated;
 
 grant execute on function app_flags() to anon, authenticated;
+
+-- ───────────────────────────────────────────────────────────────
+--  9. 선착순 지급 — 운영자가 모집 마감 후 직접 실행
+-- ───────────────────────────────────────────────────────────────
+-- 자동 지급하지 않는 이유: 가입 즉시 "선착순에 들었다" 는 신호가 가면
+-- 가입자가 남은 자리를 역산할 수 있다. 모집을 닫은 뒤 한 번에 준다.
+--
+-- 먼저 대상 확인 (프로필을 완성한 사람만, 가입 순):
+--
+--   select gender, count(*) from profiles
+--    where photo is not null and career is not null
+--    group by gender;
+--
+-- 지급 (성별로 각각 앞의 30명). 두 번 실행해도 중복 지급되지 않는다.
+--
+--   insert into credit_ledger (user_id, delta, reason, ref)
+--   select id, credit_rule('early_bird'), 'early_bird', ''
+--     from (
+--       select id, row_number() over (partition by gender order by created_at) as rn
+--         from profiles
+--        where photo is not null and career is not null
+--     ) t
+--    where rn <= 30
+--   on conflict (user_id, reason, ref) do nothing;
+--
+-- 지급 결과 확인:
+--
+--   select p.gender, count(*) as 지급
+--     from credit_ledger l join profiles p on p.id = l.user_id
+--    where l.reason = 'early_bird'
+--    group by p.gender;

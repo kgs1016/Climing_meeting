@@ -481,12 +481,16 @@ export const CREDIT_LABELS: Record<string, string> = {
   mission_video: "🎥 영상 미션",
   mission_done: "✅ 미션 완료",
   profile_complete: "🧗 프로필 완성",
-  request_extra: "💌 관심 추가 발송",
+  early_bird: "🎁 사전 가입 혜택",
+  request_extra: "💌 관심 보내기",
 };
 
-/** 관심 1회 비용 — 서버 credit_rule('request_extra') 과 같은 값이어야 한다.
- *  표시용이고, 실제 차감은 서버가 한다. */
-export const REQUEST_COST = 1000;
+/* 표시용 금액 — 서버 credit_rule() 과 같은 값이어야 한다.
+   실제 적립·차감은 전부 서버가 하고, 여기 값은 안내 문구에만 쓴다.
+   ⚠️ SQL 의 credit_rule 을 바꾸면 여기도 같이 바꿀 것. */
+export const REQUEST_COST = 1000; // request_extra
+export const CREDIT_MISSION_DONE = 200; // mission_done
+export const CREDIT_MISSION_VIDEO = 700; // mission_video (완료분에 더해짐)
 
 export interface Credits {
   balance: number;

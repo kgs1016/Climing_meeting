@@ -118,6 +118,38 @@
   .step-body p{font-size:14px;color:var(--muted)}
   .step-body p b{color:var(--text);font-weight:600}
 
+  /* ── 앱 화면 목업 ──
+     이미지 없이 CSS로 그린다. "실제 화면"이 있어야 이벤트가 아니라 앱으로 읽힌다. */
+  .shots{display:flex;flex-direction:column;gap:26px;margin-top:6px;text-align:left}
+  .shot-t{font-size:14.5px;font-weight:700;margin-bottom:10px}
+  .shot-d{font-size:13.5px;color:var(--muted);margin-top:10px;line-height:1.65}
+  .shot-d b{color:var(--text);font-weight:600}
+  .ui{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
+  .ui-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:12px 14px;display:flex;flex-direction:column;gap:3px;
+  }
+  .ui-card.row{flex-direction:row;align-items:center;gap:12px}
+  .ui-card b{font-size:14.5px;font-weight:700;display:block}
+  .ui-card b.mintt{color:var(--mint);font-size:19px}
+  .ui-sub{font-size:12.5px;color:var(--muted);display:block}
+  .ui-row{display:flex;gap:6px;margin-top:8px}
+  .pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .pill.m{background:rgba(111,159,232,.16);color:#6f9fe8}
+  .pill.f{background:rgba(232,127,172,.16);color:#e87fac}
+  .ui-face{
+    width:44px;height:44px;border-radius:50%;background:var(--surface2);
+    display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;
+  }
+  .ui-chip{
+    background:var(--accent);color:#fff;font-size:12px;font-weight:700;
+    padding:7px 12px;border-radius:9px;flex-shrink:0;
+  }
+  .ui-btn{
+    margin-top:10px;background:var(--accent);color:#fff;font-size:13px;font-weight:700;
+    padding:10px 0;border-radius:9px;text-align:center;
+  }
+
   /* ── 카드 미리보기 mockup ── */
   .mock{
     background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
@@ -190,36 +222,89 @@
     <span class="badge">8월 31일 오픈 · 사전 가입 모집중</span>
     <h1>클라이밍 하러 갔다가,<br><em>인연</em>을 만났다</h1>
     <p class="sub">
-      취미로 시작해서, 사람으로 끝나는 하루.<br>
-      남녀 같은 수로 모이는 <b>2시간 볼더링</b>.
+      볼더링 모임을 <b>찾고, 직접 열고,</b> 만나는 것까지.<br>
+      취미로 시작해서 사람으로 끝나는 앱.
     </p>
     <a class="cta" href="#" data-apply>지금 사전 가입하기</a>
     <p class="cta-note"><b>선착순 남 30 · 여 30명</b> · 10,000 크레딧 지급</p>
-
-    <div class="cost">
-      <p class="cost-title">🎁 사전 가입 혜택</p>
-      <ul>
-        <li><span>선착순 <b class="free">남 30 · 여 30명</b></span><b class="free">10,000 크레딧</b></li>
-        <li><span>그 이후 가입</span><b>3,000 크레딧</b></li>
-        <li><span>크레딧으로 하는 것</span><b>마음에 드는 사람에게 관심 보내기</b></li>
-        <li><span>관심 1회</span><b>1,000 크레딧</b></li>
-      </ul>
-      <p class="cost-note">
-        선착순은 <b style="color:#f5f2ee">성별로 각각 30명</b>이에요. 성비가 맞아야 모임이 열려서요.<br>
-        오픈 전에 가입만 해두면 자동으로 지급됩니다.
-      </p>
-    </div>
-
-    <div class="cost" style="margin-top:12px">
-      <p class="cost-title">💰 모임 비용은 이게 전부</p>
-      <ul>
-        <li><span>호비데이 이용료</span><b class="free">0원</b></li>
-        <li><span>암장 일일권 + 신발 대여</span><b>3만원 내외 · 현장 각자 결제</b></li>
-        <li><span>저녁 (선택)</span><b>갈 사람만 · 각자 먹은 만큼</b></li>
-      </ul>
-      <p class="cost-note">주선비는 받지 않아요. 암장 비용만 각자 결제하면 끝입니다.</p>
-    </div>
   </header>
+
+  <!-- APP — 실제 화면 -->
+  <section>
+    <p class="eyebrow">APP</p>
+    <h2>앱에서 이렇게<br>돌아갑니다</h2>
+    <p class="desc">
+      정해진 행사에 참가하는 게 아니에요. <b>원하는 날, 원하는 암장에</b> 직접
+      모임을 열고 사람을 모을 수 있어요.
+    </p>
+
+    <div class="shots">
+      <div class="shot">
+        <p class="shot-t">① 모임 찾기</p>
+        <div class="ui">
+          <div class="ui-card">
+            <b>더클라임 B홍대</b>
+            <span class="ui-sub">토 8/31 · 15:00~17:00</span>
+            <span class="ui-sub">L2 초급 ~ L3 중급 (주황·초록·파랑)</span>
+            <div class="ui-row"><span class="pill m">남 1자리</span><span class="pill f">여 2자리</span></div>
+          </div>
+        </div>
+        <p class="shot-d">
+          누가 신청했는지는 안 보여요. <b>짐·시간·레벨·남은 자리만</b> 공개돼
+          외모로 고르는 앱이 되지 않아요.
+        </p>
+      </div>
+
+      <div class="shot">
+        <p class="shot-t">② 모임 진행 — 라운드마다 짝이 바뀝니다</p>
+        <div class="ui">
+          <div class="ui-card">
+            <b>🧗 라운드 1 · 15:20</b>
+            <span class="ui-sub">서연 27 · 구력 1~2년 · 더클라임 연남</span>
+            <div class="match-row hit" style="margin:8px 0 0"><span class="tag">일치</span><span>둘 다 🧗 더클라임 연남 다녀요</span></div>
+            <div class="match-row mid" style="margin:6px 0 0"><span class="tag">겹침</span><span>둘 다 외향·직관형</span></div>
+            <div class="ui-btn">🎥 등반 영상 올리기</div>
+          </div>
+        </div>
+        <p class="shot-d">
+          1:1 라운드 <b>시작 5분 전</b>에 상대와 나의 공통점 카드가 도착해요.
+          벽에서 만나자마자 할 얘기가 생깁니다.
+        </p>
+      </div>
+
+      <div class="shot">
+        <p class="shot-t">③ 사람 찾기 — 먼저 사람을 골라도 돼요</p>
+        <div class="ui">
+          <div class="ui-card row">
+            <span class="ui-face">🧗</span>
+            <div style="flex:1;min-width:0">
+              <b>지훈 29 · 망원동</b>
+              <span class="ui-sub">L3 중급 · 구력 3~6개월 · ENFJ</span>
+            </div>
+            <span class="ui-chip">관심</span>
+          </div>
+        </div>
+        <p class="shot-d">
+          관심을 보내면 상대 신청함에 도착해요. <b>수락하면 채팅이 열립니다</b> —
+          모르는 사람에게 메시지가 쏟아지는 일은 없어요.
+        </p>
+      </div>
+
+      <div class="shot">
+        <p class="shot-t">④ 내 것으로 쌓입니다</p>
+        <div class="ui">
+          <div class="ui-card row">
+            <div style="flex:1"><span class="ui-sub">크레딧</span><b class="mintt">10,000</b></div>
+            <div style="flex:1"><span class="ui-sub">내 영상</span><b>🎥 3</b></div>
+          </div>
+        </div>
+        <p class="shot-d">
+          모임에서 서로 찍어준 등반 영상은 <b>내 보관함</b>에 남고, 미션을 하면
+          크레딧이 쌓여요. 만남과 별개로 앱을 열 이유가 됩니다.
+        </p>
+      </div>
+    </div>
+  </section>
 
   <!-- CONTENTS -->
   <section>
@@ -304,6 +389,35 @@
         <small>💬 대화 씨앗</small>
         "라운드 끝나고 뭐 먹을지부터 정할까요?"
       </div>
+    </div>
+  </section>
+
+  <!-- 혜택 · 비용 — 가입을 결정하기 직전에 둔다 -->
+  <section>
+    <p class="eyebrow">JOIN NOW</p>
+    <h2>사전 가입 혜택</h2>
+    <p class="desc">오픈 전에 가입만 해두면 자동으로 지급돼요.</p>
+
+    <div class="cost" style="margin-top:0">
+      <ul>
+        <li><span>선착순 <b class="free">남 30 · 여 30명</b></span><b class="free">10,000 크레딧</b></li>
+        <li><span>그 이후 가입</span><b>3,000 크레딧</b></li>
+        <li><span>관심 1회</span><b>1,000 크레딧</b></li>
+      </ul>
+      <p class="cost-note">
+        선착순은 <b style="color:#f5f2ee">성별로 각각 30명</b>이에요. 성비가 맞아야
+        모임이 열려서요.
+      </p>
+    </div>
+
+    <div class="cost" style="margin-top:12px">
+      <p class="cost-title">💰 앱은 무료, 모임 비용은 이게 전부</p>
+      <ul>
+        <li><span>호비데이 이용료</span><b class="free">0원</b></li>
+        <li><span>암장 일일권 + 신발 대여</span><b>3만원 내외 · 현장 각자 결제</b></li>
+        <li><span>저녁 (선택)</span><b>갈 사람만 · 각자 먹은 만큼</b></li>
+      </ul>
+      <p class="cost-note">주선비는 받지 않아요. 암장 비용만 각자 결제하면 끝입니다.</p>
     </div>
   </section>
 

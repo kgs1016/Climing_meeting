@@ -449,6 +449,32 @@ export async function signedPhotoUrls(
   return out;
 }
 
+/* ── 오픈 전 잠금 · 선착순 ── */
+
+export interface AppFlags {
+  sessions_open: boolean;
+  people_open: boolean;
+  open_at: string | null;
+  notice: string | null;
+}
+
+/** 로그인 없이도 읽힌다 (플래그·집계뿐) */
+export async function fetchAppFlags() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("app_flags");
+  if (error) return null;
+  return data as AppFlags;
+}
+
+export async function fetchEarlyBird() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("early_bird_status");
+  if (error) return null;
+  return data as { slots: number; taken_m: number; taken_f: number };
+}
+
 /* ── 크레딧 ── */
 
 export const CREDIT_LABELS: Record<string, string> = {
@@ -460,7 +486,7 @@ export const CREDIT_LABELS: Record<string, string> = {
 
 /** 관심 1회 비용 — 서버 credit_rule('request_extra') 과 같은 값이어야 한다.
  *  표시용이고, 실제 차감은 서버가 한다. */
-export const REQUEST_COST = 30;
+export const REQUEST_COST = 1000;
 
 export interface Credits {
   balance: number;

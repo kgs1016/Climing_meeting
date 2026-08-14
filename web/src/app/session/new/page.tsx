@@ -6,6 +6,7 @@ import { LEVELS, type LevelId } from "@/lib/levels";
 import { hasSupabase, currentUser, fetchMyProfileDb, createSession } from "@/lib/supabase";
 import { isProfileComplete } from "@/lib/profileGate";
 
+/** 빠른 선택용. 여기 없는 짐은 직접 입력한다 (서울·경기 전체 대상). */
 const GYMS = [
   "더클라임 B홍대",
   "더클라임 연남",
@@ -164,7 +165,15 @@ export default function NewSession() {
 
       <form className="flex flex-col gap-6 pb-8" onSubmit={submit}>
         <Field label="짐">
-          <div className="flex flex-wrap gap-1.5">
+          {/* 서울·경기 전체를 대상으로 하므로 목록으로 못 다 담는다.
+              자주 쓰는 곳은 칩으로, 나머지는 직접 입력. */}
+          <input
+            value={gym}
+            onChange={(e) => setGym(e.target.value)}
+            placeholder="예: 더클라임 강남"
+            className={inputCls}
+          />
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {GYMS.map((g) => (
               <Chip key={g} active={gym === g} onClick={() => setGym(g)}>
                 {g}

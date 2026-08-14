@@ -16,7 +16,9 @@ import {
   fetchPeople,
   fetchMyProfileDb,
   REQUEST_COST,
+  fetchAppFlags,
   fetchCredits,
+  type AppFlags,
   fetchInboxCounts,
   fetchSentRequests,
   sendRequest,
@@ -33,6 +35,7 @@ export default function Home() {
   const [me, setMe] = useState<MyProfile | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [onboarding, setOnboarding] = useState(false);
+  const [flags, setFlags] = useState<AppFlags | null>(null);
   const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
   const [people, setPeople] = useState<(Person & { intro?: string })[]>(MOCK_PEOPLE);
   const [live, setLive] = useState(false);
@@ -66,6 +69,16 @@ export default function Home() {
       if (!isProfileComplete(prof)) {
         setOnboarding(true);
         router.replace("/profile/new");
+        return;
+      }
+      setMe(prof);
+
+      // 오픈 전에는 모임·사람을 잠근다 (대시보드 app_config 로 켠다)
+      const f = await fetchAppFlags();
+      setFlags(f);
+      if (f && !f.sessions_open && !f.people_open) {
+        const cr = await fetchCredits();
+        if (cr) setCredits(cr);
         return;
       }
 
@@ -133,6 +146,86 @@ export default function Home() {
         프로필 작성으로 이동 중…
       </main>
     );
+
+  // 오픈 전 대기 화면 — 가입·프로필은 끝냈고 기능만 잠긴 상태
+  if (flags && !flags.sessions_open && !flags.people_open) {
+    const openDay = flags.open_at
+      ? new Date(flags.open_at).toLocaleDateString("ko-KR", {
+          month: "long",
+          day: "numeric",
+        })
+      : null;
+    return (
+      <main className="px-4">
+        <header className="pt-10 text-center">
+          <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
+            HOBIDAY
+          </p>
+          <p className="mt-6 text-4xl">🧗</p>
+          <h1 className="mt-4 text-[21px] font-extrabold leading-snug tracking-tight">
+            가입 완료!
+            {openDay && (
+              <>
+                <br />
+                {openDay}에 모임이 열려요
+              </>
+            )}
+          </h1>
+          {flags.notice && (
+            <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
+              {flags.notice}
+            </p>
+          )}
+        </header>
+
+        <section className="mx-auto mt-8 max-w-sm rounded-2xl border border-mint/40 bg-mint/10 p-5 text-center">
+          <p className="text-[12.5px] font-semibold text-muted">내 크레딧</p>
+          <p className="mt-1 text-[32px] font-extrabold text-mint">
+            {(credits?.balance ?? 0).toLocaleString()}
+          </p>
+          <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+            오픈하면 관심 {Math.floor((credits?.balance ?? 0) / REQUEST_COST)}번을
+            보낼 수 있어요
+          </p>
+        </section>
+
+        <section className="mx-auto mt-4 max-w-sm rounded-2xl border border-line bg-surface p-5">
+          <p className="text-[13.5px] font-bold">오픈하면 이런 걸 할 수 있어요</p>
+          <div className="mt-3 flex flex-col gap-2.5 text-[12.5px] leading-relaxed text-muted">
+            <p>
+              🧗 <b className="text-ink">모임 찾기</b> — 남녀 같은 수로 모여 2시간
+              볼더링
+            </p>
+            <p>
+              💌 <b className="text-ink">공통점 카드</b> — 1:1 라운드 5분 전에 상대
+              정보가 도착
+            </p>
+            <p>
+              🎥 <b className="text-ink">영상 미션</b> — 서로 등반을 찍어주고
+              크레딧 적립
+            </p>
+            <p>
+              🤫 <b className="text-ink">비공개 선택</b> — 서로 고른 경우에만 채팅
+              개설
+            </p>
+          </div>
+        </section>
+
+        <div className="mx-auto mt-4 max-w-sm">
+          <Link
+            href="/profile/new"
+            className="block rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-muted"
+          >
+            내 프로필 다듬기
+          </Link>
+        </div>
+
+        <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted">
+          오픈 소식은 가입하신 이메일로 알려드려요.
+        </p>
+      </main>
+    );
+  }
 
   // 비로그인 게이트 — authed 가 null 인 동안(확인 중)은 띄우지 않아 깜빡임이 없다
   if (authed === false) {

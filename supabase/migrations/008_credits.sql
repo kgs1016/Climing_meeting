@@ -1,18 +1,19 @@
 -- ═══════════════════════════════════════════════════════════════
---  크레딧 — 미션으로 벌고, 관심 추가 발송에 쓴다
---  Supabase 대시보드 > SQL Editor 에 붙여넣고 Run · 몇 번 돌려도 안전
+--  크레딧 + 사전 모집 (선착순 · 기능 잠금)
+--  Supabase 대시보드 > SQL Editor 에 통째로 붙여넣고 Run · 몇 번 돌려도 안전
+--  ⚠️ 001~007 을 먼저 실행한 상태여야 한다.
 -- ═══════════════════════════════════════════════════════════════
 --
--- 사용처를 왜 "관심 추가 발송" 으로 잡았나
---   PRODUCT.md 에서 크레딧 사용처는 수익 모델과 함께 보류 상태다.
---   결제·사업자등록 없이 지금 성립하는 유일한 순환이 신청권이고,
---   문서에도 "신청권·구독과 연결이 자연스럽다" 고 적혀 있다.
---   나중에 유료 상품이 생기면 사용처를 추가하면 된다.
+-- 크레딧 단위: 1크레딧 ≈ 1원 감각. 관심 1회 = 1,000.
+-- 무료 관심은 없다. 전부 크레딧으로만 보낸다.
 --
 -- 잔액을 따로 저장하지 않는 이유
 --   원장(ledger) 합계로 계산한다. 잔액 컬럼을 두면 원장과 어긋날 때
 --   어느 쪽이 맞는지 알 수 없다. 규모가 커지면 캐시를 붙이면 된다.
 
+-- ───────────────────────────────────────────────────────────────
+--  1. 원장
+-- ───────────────────────────────────────────────────────────────
 create table if not exists credit_ledger (
   id         bigserial primary key,
   user_id    uuid not null references profiles(id) on delete cascade,
@@ -28,18 +29,19 @@ create index if not exists credit_ledger_user_idx on credit_ledger (user_id, cre
 
 alter table credit_ledger enable row level security;
 -- 정책 없음 = 직접 접근 차단. 아래 RPC 로만.
--- 특히 클라이언트가 적립을 직접 넣을 수 있으면 크레딧이 의미가 없다.
+-- 클라이언트가 적립을 직접 넣을 수 있으면 크레딧이 의미가 없다.
 
--- ─────────── 적립·차감 금액 (한 곳에서 관리) ───────────
+-- ───────────────────────────────────────────────────────────────
+--  2. 금액 규칙 (한 곳에서 관리)
+-- ───────────────────────────────────────────────────────────────
 create or replace function credit_rule(p_reason text) returns int
   language sql immutable as $$
   select case p_reason
-    when 'mission_video'    then 20   -- 영상까지 올린 미션
-    when 'mission_done'     then 5    -- 영상 없이 완료 체크
-    -- 가입 보너스. 무료 관심이 없으므로, 첫 모임에 나가기 전까지
-    -- 아무도 못 만나고 막히지 않도록 관심 3회분을 준다.
-    when 'profile_complete' then 100
-    when 'request_extra'    then -30  -- 관심 1회
+    when 'early_bird'       then 10000  -- 선착순 (성별 각 30명) = 관심 10회
+    when 'profile_complete' then 3000   -- 가입 보너스 = 관심 3회
+    when 'mission_video'    then 700    -- 영상까지 올린 미션
+    when 'mission_done'     then 200    -- 영상 없이 완료 체크
+    when 'request_extra'    then -1000  -- 관심 1회
     else 0
   end $$;
 
@@ -47,9 +49,14 @@ create or replace function credit_rule(p_reason text) returns int
 create or replace function request_daily_limit() returns int
   language sql immutable as $$ select 0 $$;
 
--- 내부용 적립 함수.
+create or replace function early_bird_slots() returns int
+  language sql immutable as $$ select 30 $$;
+
+-- ───────────────────────────────────────────────────────────────
+--  3. 적립 · 조회
+-- ───────────────────────────────────────────────────────────────
 -- 이미 있는 (reason, ref) 면 0 을 반환한다 — 실제로 적립된 금액만 돌려줘야
--- 화면에서 "+20 받았어요" 가 거짓으로 뜨지 않는다.
+-- 화면에서 "+700 받았어요" 가 거짓으로 뜨지 않는다.
 create or replace function credit_grant(
   p_user uuid, p_reason text, p_ref text default '')
 returns int language plpgsql security definer set search_path = public as $$
@@ -68,7 +75,6 @@ returns int language sql stable security definer set search_path = public as $$
   select coalesce(sum(delta), 0)::int from credit_ledger where user_id = p_user;
 $$;
 
--- 내 잔액 + 최근 내역
 create or replace function my_credits()
 returns json language sql stable security definer set search_path = public as $$
   select json_build_object(
@@ -84,7 +90,21 @@ returns json language sql stable security definer set search_path = public as $$
   );
 $$;
 
--- ─────────── 미션 완료 시 적립 ───────────
+-- 선착순 현황 — 운영자 확인용. 랜딩에 노출하지 않으므로 anon 에게 열지 않는다.
+create or replace function early_bird_status()
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'slots', early_bird_slots(),
+    'taken_m', (select count(*) from credit_ledger l join profiles p on p.id = l.user_id
+                 where l.reason = 'early_bird' and p.gender = 'm'),
+    'taken_f', (select count(*) from credit_ledger l join profiles p on p.id = l.user_id
+                 where l.reason = 'early_bird' and p.gender = 'f')
+  );
+$$;
+
+-- ───────────────────────────────────────────────────────────────
+--  4. 미션 완료 → 적립
+-- ───────────────────────────────────────────────────────────────
 create or replace function mission_done(p_session uuid, p_round int, p_video text default null)
 returns json language plpgsql security definer set search_path = public as $$
 declare me_id uuid := auth.uid(); pid uuid; room json; ref text; earned int := 0;
@@ -117,7 +137,9 @@ begin
                            'balance', credit_balance(me_id));
 end; $$;
 
--- ─────────── 관심 보내기: 한도 초과분은 크레딧으로 ───────────
+-- ───────────────────────────────────────────────────────────────
+--  5. 관심 보내기 → 크레딧 차감
+-- ───────────────────────────────────────────────────────────────
 create or replace function request_send(p_to uuid, p_message text default null)
 returns json language plpgsql security definer set search_path = public as $$
 declare me profiles; you profiles; sent_today int; existing requests;
@@ -165,11 +187,13 @@ begin
     'balance', credit_balance(me.id));
 end; $$;
 
--- ─────────── 프로필 첫 완성 보너스 ───────────
--- 사진까지 채운 프로필이 처음 완성된 시점에 한 번 적립한다.
+-- ───────────────────────────────────────────────────────────────
+--  6. 프로필 완성 → 가입 보너스 + 선착순
+-- ───────────────────────────────────────────────────────────────
+-- 성별을 나누지 않으면 한쪽이 자리를 다 차지해서 2:2 조차 못 만든다.
 create or replace function claim_profile_bonus()
 returns json language plpgsql security definer set search_path = public as $$
-declare me profiles; earned int;
+declare me profiles; earned int := 0; taken int; early int := 0;
 begin
   select * into me from profiles where id = auth.uid();
   if not found then return json_build_object('error','no_profile'); end if;
@@ -178,21 +202,74 @@ begin
   end if;
 
   earned := credit_grant(me.id, 'profile_complete');
-  return json_build_object('ok', true, 'earned', earned,
+
+  -- 동시 가입이 같은 자리를 함께 통과하지 못하게 성별로 잠근다
+  perform pg_advisory_xact_lock(hashtext('early_bird:' || me.gender));
+
+  select count(*) into taken
+    from credit_ledger l join profiles p on p.id = l.user_id
+   where l.reason = 'early_bird' and p.gender = me.gender;
+
+  if taken < early_bird_slots() then
+    early := credit_grant(me.id, 'early_bird');
+    earned := earned + early;
+  end if;
+
+  return json_build_object('ok', true, 'earned', earned, 'early_bird', early > 0,
                            'balance', credit_balance(me.id));
 end; $$;
 
--- ─────────── 권한 ───────────
--- credit_grant / credit_balance 는 내부용 — 클라이언트에 열지 않는다.
-revoke execute on function credit_rule(text)                      from public, anon, authenticated;
-revoke execute on function credit_grant(uuid,text,text)           from public, anon, authenticated;
-revoke execute on function credit_balance(uuid)                   from public, anon, authenticated;
-revoke execute on function my_credits()                           from public, anon;
-revoke execute on function claim_profile_bonus()                  from public, anon;
-revoke execute on function mission_done(uuid,int,text)            from public, anon;
-revoke execute on function request_send(uuid,text)                from public, anon;
+-- ───────────────────────────────────────────────────────────────
+--  7. 기능 잠금 스위치
+-- ───────────────────────────────────────────────────────────────
+-- 오픈 전에는 가입·프로필만 열고 모임·사람은 잠근다.
+-- 오픈 날에는 이 표의 두 값을 true 로 바꾸면 된다 (배포 불필요).
+create table if not exists app_config (
+  id            int primary key default 1 check (id = 1),
+  sessions_open boolean not null default false,
+  people_open   boolean not null default false,
+  open_at       timestamptz,
+  notice        text
+);
+
+insert into app_config (id, sessions_open, people_open, open_at, notice)
+values (1, false, false, '2026-08-31 10:00+09',
+        '8월 31일에 모임이 열려요. 그때까지 크레딧을 모아두세요!')
+on conflict (id) do nothing;
+
+alter table app_config enable row level security;
+
+-- 잠금 상태는 로그인 전 화면에서도 읽어야 한다 (플래그·날짜뿐)
+create or replace function app_flags()
+returns json language sql stable security definer set search_path = public as $$
+  select json_build_object(
+    'sessions_open', sessions_open,
+    'people_open', people_open,
+    'open_at', open_at,
+    'notice', notice
+  ) from app_config where id = 1;
+$$;
+
+-- ───────────────────────────────────────────────────────────────
+--  8. 권한 — PUBLIC 기본 EXECUTE 를 반드시 함께 회수한다
+-- ───────────────────────────────────────────────────────────────
+-- 금액 규칙과 적립 함수는 내부용 — 클라이언트에 열지 않는다.
+revoke execute on function credit_rule(text)              from public, anon, authenticated;
+revoke execute on function request_daily_limit()          from public, anon, authenticated;
+revoke execute on function early_bird_slots()             from public, anon, authenticated;
+revoke execute on function credit_grant(uuid,text,text)   from public, anon, authenticated;
+revoke execute on function credit_balance(uuid)           from public, anon, authenticated;
+
+revoke execute on function my_credits()                   from public, anon;
+revoke execute on function early_bird_status()            from public, anon;
+revoke execute on function claim_profile_bonus()          from public, anon;
+revoke execute on function mission_done(uuid,int,text)    from public, anon;
+revoke execute on function request_send(uuid,text)        from public, anon;
+revoke execute on function app_flags()                    from public;
 
 grant execute on function
-  my_credits(), claim_profile_bonus(),
+  my_credits(), early_bird_status(), claim_profile_bonus(),
   mission_done(uuid,int,text), request_send(uuid,text)
 to authenticated;
+
+grant execute on function app_flags() to anon, authenticated;

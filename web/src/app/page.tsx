@@ -31,13 +31,20 @@ const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
 
 export default function Home() {
   const router = useRouter();
+  // Supabase 키가 없을 때만 목데이터로 화면을 본다 (개발 폴백).
+  // 실제 배포에선 목데이터를 초기값으로 두면 안 된다 — 확인이 끝나기 전에
+  // 존재하지 않는 모임이 1초쯤 그려진다.
+  const mockMode = !hasSupabase();
   const [tab, setTab] = useState<"session" | "people">("session");
   const [me, setMe] = useState<MyProfile | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [onboarding, setOnboarding] = useState(false);
   const [flags, setFlags] = useState<AppFlags | null>(null);
-  const [sessions, setSessions] = useState<Session[]>(MOCK_SESSIONS);
-  const [people, setPeople] = useState<(Person & { intro?: string })[]>(MOCK_PEOPLE);
+  const [ready, setReady] = useState(mockMode);
+  const [sessions, setSessions] = useState<Session[]>(mockMode ? MOCK_SESSIONS : []);
+  const [people, setPeople] = useState<(Person & { intro?: string })[]>(
+    mockMode ? MOCK_PEOPLE : []
+  );
   const [live, setLive] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   // 관심 보내기
@@ -104,6 +111,8 @@ export default function Home() {
       if (sent) setSentTo(new Set(sent.map((s) => s.to_id)));
       if (c) setCounts(c);
       if (cr) setCredits(cr);
+
+      setReady(true); // 여기까지 와야 목록을 그린다
     })();
   }, []);
 
@@ -146,6 +155,7 @@ export default function Home() {
         프로필 작성으로 이동 중…
       </main>
     );
+
 
   // 오픈 전 대기 화면 — 가입·프로필은 끝냈고 기능만 잠긴 상태
   if (flags && !flags.sessions_open && !flags.people_open) {
@@ -265,6 +275,17 @@ export default function Home() {
         <p className="mt-8 text-center text-[11.5px] leading-relaxed text-muted">
           참여자 프로필을 보호하려고 로그인 후에만 공개해요.
         </p>
+      </main>
+    );
+  }
+
+  // 위 화면들(온보딩·잠금·비로그인) 중 어느 것도 아닌데 아직 조회가 안 끝난 상태.
+  // 여기서 목록을 그리면 빈 목록이나 목데이터가 잠깐 보인다.
+  if (!ready) {
+    return (
+      <main className="px-4 pt-24 text-center">
+        <p className="text-3xl">🧗</p>
+        <p className="mt-3 text-[13.5px] text-muted">불러오는 중…</p>
       </main>
     );
   }

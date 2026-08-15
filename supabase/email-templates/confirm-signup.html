@@ -1,0 +1,61 @@
+<!-- 하비데이 · 회원가입 확인
+     Supabase Dashboard > Authentication > Emails > Confirm signup 에 붙여넣는다.
+     커스텀 SMTP 를 붙이기 전에는 이 템플릿을 저장할 수 없다.
+
+     메일은 다크모드를 제대로 못 다루는 클라이언트가 많아 밝은 배경으로 간다.
+     CSS 는 인라인으로만 — 지메일은 <style> 을 상당 부분 버린다. -->
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f4f2ef;padding:32px 0;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic','맑은 고딕',sans-serif;">
+  <tr>
+    <td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;background:#ffffff;border-radius:16px;padding:36px 28px;">
+        <tr>
+          <td align="center" style="padding-bottom:4px;">
+            <span style="font-size:19px;font-weight:800;color:#ff5a45;letter-spacing:0.5px;">HOBIDAY</span>
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom:26px;">
+            <span style="font-size:12.5px;color:#8b857d;">취미로 시작해서, 사람으로 끝나는 하루</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:17px;font-weight:800;color:#1a1917;padding-bottom:10px;">
+            메일 주소만 확인하면 끝이에요
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:14px;line-height:1.7;color:#5f5a54;padding-bottom:24px;">
+            하비데이 가입을 시작하셨어요.<br>
+            아래 버튼을 눌러 본인 메일이 맞는지 확인해주세요.
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding-bottom:24px;">
+            <a href="{{ .ConfirmationURL }}"
+               style="display:inline-block;background:#ff5a45;color:#ffffff;text-decoration:none;font-size:15px;font-weight:700;padding:14px 34px;border-radius:12px;">
+              메일 주소 확인하기
+            </a>
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:12px;line-height:1.7;color:#8b857d;border-top:1px solid #eae6e1;padding-top:18px;">
+            버튼이 눌리지 않으면 아래 주소를 복사해 브라우저에 붙여넣어주세요.<br>
+            <span style="color:#a09a92;word-break:break-all;">{{ .ConfirmationURL }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:12px;line-height:1.7;color:#8b857d;padding-top:14px;">
+            가입한 적이 없다면 이 메일은 무시하셔도 괜찮아요. 아무 일도 일어나지 않아요.
+          </td>
+        </tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:440px;">
+        <tr>
+          <td align="center" style="font-size:11px;color:#a09a92;padding-top:18px;">
+            하비데이 · HOBIDAY
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

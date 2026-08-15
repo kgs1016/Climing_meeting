@@ -452,6 +452,54 @@ export async function signedPhotoUrls(
   return out;
 }
 
+/* ── 회원 탈퇴 ── */
+
+/** 스토리지 목록은 한 단계씩만 준다. 영상 경로가 {uid}/{session}/{파일} 이라
+ *  폴더를 만나면 한 번 더 들어가야 한다. 폴더는 id 가 null 로 온다. */
+async function listAllPaths(bucket: string, prefix: string): Promise<string[]> {
+  const sb = getSupabase();
+  if (!sb) return [];
+  const { data, error } = await sb.storage.from(bucket).list(prefix, { limit: 1000 });
+  if (error || !data) return [];
+
+  const out: string[] = [];
+  for (const f of data) {
+    const path = `${prefix}/${f.name}`;
+    if (f.id === null) out.push(...(await listAllPaths(bucket, path)));
+    else out.push(path);
+  }
+  return out;
+}
+
+/** 탈퇴.
+ *
+ *  순서가 중요하다 — 스토리지(사진·영상)는 DB 밖에 있어 계정을 지워도
+ *  같이 지워지지 않는다. 그런데 계정을 먼저 지우면 로그인이 끊겨
+ *  파일을 지울 권한이 사라진다. 그래서 파일 → 계정 순으로 지운다.
+ *
+ *  나머지(프로필·신청·매칭·메시지·크레딧)는 DB 의 cascade 가 처리한다. */
+export async function deleteAccount(): Promise<{ ok?: true; error?: string }> {
+  const sb = getSupabase();
+  const user = await currentUser();
+  if (!sb || !user) return { error: "no_auth" };
+
+  for (const bucket of [PHOTO_BUCKET, VIDEO_BUCKET]) {
+    const paths = await listAllPaths(bucket, user.id);
+    // remove 는 한 번에 여러 개를 받지만 너무 많으면 요청이 커진다
+    for (let i = 0; i < paths.length; i += 100) {
+      await sb.storage.from(bucket).remove(paths.slice(i, i + 100));
+    }
+  }
+
+  const { data, error } = await sb.rpc("account_delete");
+  if (error) return { error: error.message };
+  const r = data as { ok?: boolean; error?: string };
+  if (r?.error) return { error: r.error };
+
+  await sb.auth.signOut();
+  return { ok: true };
+}
+
 /* ── 오픈 전 잠금 · 선착순 ── */
 
 export interface AppFlags {

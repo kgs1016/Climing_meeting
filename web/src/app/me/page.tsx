@@ -15,6 +15,7 @@ import {
   getSupabase,
   hasSupabase,
   currentUser,
+  deleteAccount,
   fetchCredits,
   fetchMyProfileDb,
   fetchMyVideos,
@@ -29,6 +30,9 @@ export default function Me() {
   const [credits, setCredits] = useState<Credits | null>(null);
   const [showCredits, setShowCredits] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [leaving, setLeaving] = useState(false); // 탈퇴 확인 패널
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +63,18 @@ export default function Me() {
 
   const logout = async () => {
     await getSupabase()?.auth.signOut();
+    router.replace("/login");
+  };
+
+  const leave = async () => {
+    setBusy(true);
+    const r = await deleteAccount();
+    setBusy(false);
+    if (r.error) {
+      alert(`탈퇴 처리에 실패했어요: ${r.error}\n잠시 후 다시 시도해주세요.`);
+      return;
+    }
+    alert("탈퇴가 완료됐어요. 그동안 함께해줘서 고마워요.");
     router.replace("/login");
   };
 
@@ -198,6 +214,59 @@ export default function Me() {
               로그아웃
             </button>
           )}
+
+          {email &&
+            (!leaving ? (
+              <button
+                onClick={() => setLeaving(true)}
+                className="mt-3 w-full py-2 text-[12.5px] font-semibold text-muted/70 underline underline-offset-4"
+              >
+                회원 탈퇴
+              </button>
+            ) : (
+              <section className="mt-3 rounded-2xl border border-line bg-surface p-5">
+                <p className="text-[15px] font-extrabold">정말 탈퇴할까요?</p>
+                <ul className="mt-3 flex flex-col gap-1.5 text-[12.5px] leading-relaxed text-muted">
+                  <li>· 프로필과 사진·영상이 모두 지워져요</li>
+                  <li>· 주고받은 대화와 매칭이 사라져요 (상대방 쪽에서도)</li>
+                  <li>
+                    · 남은 크레딧 {(credits?.balance ?? 0).toLocaleString()}은
+                    복구되지 않아요
+                  </li>
+                  <li>· 신청한 모임에서 자동으로 빠져요</li>
+                </ul>
+                <p className="mt-3 text-[12px] leading-relaxed text-muted">
+                  되돌릴 수 없어요. 계속하려면 아래에{" "}
+                  <b className="text-ink">탈퇴</b>를 입력해주세요.
+                </p>
+                <input
+                  value={confirmText}
+                  onChange={(e) => setConfirmText(e.target.value)}
+                  placeholder="탈퇴"
+                  /* iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 */
+                  className="mt-2 w-full rounded-xl border border-line bg-bg px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/50"
+                />
+                <div className="mt-3 flex gap-2">
+                  <button
+                    onClick={() => {
+                      setLeaving(false);
+                      setConfirmText("");
+                    }}
+                    disabled={busy}
+                    className="flex-1 rounded-xl border border-line py-3 text-[13.5px] font-bold disabled:opacity-50"
+                  >
+                    계속 이용할래요
+                  </button>
+                  <button
+                    onClick={leave}
+                    disabled={busy || confirmText.trim() !== "탈퇴"}
+                    className="flex-1 rounded-xl border border-danger py-3 text-[13.5px] font-bold text-danger disabled:opacity-40"
+                  >
+                    {busy ? "처리 중…" : "탈퇴하기"}
+                  </button>
+                </div>
+              </section>
+            ))}
         </>
 
       <p className="mt-6 text-center text-[11.5px] text-muted">

@@ -35,6 +35,14 @@
 
   /* ── Hero ── */
   header{padding:44px 0 40px;position:relative;overflow:hidden}
+  /* 첫 화면으로 돌아가기 — header 가 가운데 정렬이라 위치를 따로 잡는다 */
+  .back{
+    position:absolute;left:0;top:0;width:38px;height:38px;border-radius:50%;
+    background:var(--surface);border:1px solid var(--line);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;line-height:1;text-decoration:none;
+  }
+  .back:active{background:var(--surface2)}
   .brand{
     display:flex;align-items:baseline;gap:8px;margin-bottom:22px;
     font-size:20px;font-weight:800;letter-spacing:1.5px;color:var(--accent);
@@ -228,6 +236,7 @@
 
   <!-- HERO -->
   <header>
+    <a class="back" href="/" aria-label="첫 화면으로">←</a>
     <p class="brand">HOBIDAY<span>하비데이</span></p>
     <span class="badge">8월 31일 오픈 · 사전 가입 모집중</span>
     <h1>클라이밍 하러 갔다가,<br><em>인연</em>을 만났다</h1>

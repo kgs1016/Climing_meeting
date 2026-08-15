@@ -36,13 +36,17 @@
   /* ── Hero ── */
   header{padding:44px 0 40px;position:relative;overflow:hidden}
   /* 첫 화면으로 돌아가기 — 스크롤해도 계속 떠 있는다.
-     left 는 본문 칼럼(최대 480px)의 왼쪽에 맞추되, 화면이 좁으면 20px 로 붙인다. */
+     본문 칼럼은 50%±220px. 버튼 오른쪽 끝이 칼럼 왼쪽에 닿도록 밀어
+     글자를 가리지 않게 한다(넓은 화면). 좁은 화면은 그만한 여백이 없어
+     6px 까지만 붙이고, 대신 반투명 배경으로 뒤 글자가 비쳐 보이게 한다. */
   .back{
-    position:fixed;z-index:20;top:16px;left:max(20px, calc(50% - 220px));
-    width:38px;height:38px;border-radius:50%;
-    background:var(--surface);border:1px solid var(--line);color:var(--muted);
+    position:fixed;z-index:20;top:16px;left:max(6px, calc(50% - 254px));
+    width:34px;height:34px;border-radius:50%;
+    background:color-mix(in srgb, var(--surface) 72%, transparent);
+    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+    border:1px solid var(--line);color:var(--muted);
     display:flex;align-items:center;justify-content:center;
-    font-size:18px;line-height:1;text-decoration:none;
+    font-size:17px;line-height:1;text-decoration:none;
   }
   .back:active{background:var(--surface2)}
   .brand{

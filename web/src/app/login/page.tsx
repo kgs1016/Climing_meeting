@@ -27,6 +27,11 @@ export default function Login() {
   const [sentMail, setSentMail] = useState(false);
 
   useEffect(() => {
+    // 소개 페이지의 "지금 사전 가입하기" 는 ?mode=signup 으로 보낸다.
+    // useSearchParams 를 쓰면 이 페이지가 Suspense 를 요구해서 window 로 읽는다.
+    if (new URLSearchParams(window.location.search).get("mode") === "signup") {
+      setMode("signup");
+    }
     enabledOAuthProviders().then((list) =>
       setProviders(list.filter((p): p is Provider => p in OAUTH))
     );

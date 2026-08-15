@@ -12,7 +12,7 @@ export interface Session {
   date: string; // "토 8/1"
   start: string; // "15:00"
   end: string; // "17:00"
-  capacity: 1 | 2 | 3; // n:n (1 = 1:1)
+  capacity: 1 | 2; // n:n (1 = 1:1, 2 = 2:2)
   levelMin: LevelId;
   levelMax: LevelId;
   ageMin: number; // 25 = 20대 중후반 시작점
@@ -47,7 +47,7 @@ export const MOCK_SESSIONS: Session[] = [
     date: "토 8/1",
     start: "15:00",
     end: "17:00",
-    capacity: 3,
+    capacity: 2,
     levelMin: 2,
     levelMax: 3,
     ageMin: 27,

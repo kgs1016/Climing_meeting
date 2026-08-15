@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { fetchInboxCounts } from "@/lib/supabase";
+import { currentUser, hasSupabase, fetchInboxCounts } from "@/lib/supabase";
 
 const TABS = [
   { href: "/", label: "홈", icon: "🏠" },
@@ -16,8 +16,24 @@ export default function BottomNav() {
   const pathname = usePathname();
   // 탭 배지 — 받은 관심 수 · 안 읽은 메시지 수
   const [badges, setBadges] = useState<Record<string, number>>({});
+  // 비로그인은 채팅·신청함·내 정보가 전부 빈 화면이라 탭 자체를 감춘다.
+  // 키가 없는 개발 폴백(목데이터)에서는 화면을 못 옮기니 그대로 띄운다.
+  // null = 확인 중 — 깜빡임을 막으려고 이때도 그리지 않는다.
+  const [authed, setAuthed] = useState<boolean | null>(hasSupabase() ? null : true);
 
   useEffect(() => {
+    if (!hasSupabase()) return;
+    let alive = true;
+    currentUser().then((u) => {
+      if (alive) setAuthed(!!u);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!authed) return;
     let alive = true;
     const load = async () => {
       const c = await fetchInboxCounts();
@@ -45,7 +61,9 @@ export default function BottomNav() {
       clearInterval(t);
     };
     // 화면을 옮길 때마다 갱신해 읽은 뒤에도 배지가 남지 않게
-  }, [pathname]);
+  }, [pathname, authed]);
+
+  if (!authed) return null;
 
   return (
     // pb-[safe] — 홈 화면에 추가해 전체화면으로 뜰 때 아이폰 홈바에 가리지 않게

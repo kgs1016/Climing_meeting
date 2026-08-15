@@ -268,7 +268,17 @@ export default function Home() {
           </Link>
         </div>
 
-        <p className="mt-8 text-center text-[11.5px] leading-relaxed text-muted">
+        <section className="mx-auto mt-6 max-w-sm rounded-2xl border border-line bg-surface px-5 py-4 text-center">
+          <p className="text-[13px] font-bold text-mint">
+            8월 31일 오픈 · 지금은 사전 가입을 받고 있어요
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            조금만 기다려 주세요. 오픈하면{" "}
+            <b className="text-ink">가입하신 이메일로</b> 알려드릴게요.
+          </p>
+        </section>
+
+        <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted">
           참여자 프로필을 보호하려고 로그인 후에만 공개해요.
         </p>
       </main>

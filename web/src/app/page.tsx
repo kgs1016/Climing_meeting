@@ -251,11 +251,6 @@ export default function Home() {
             <br />
             사람으로 끝나는 하루
           </h1>
-          <p className="mt-3 text-[13.5px] leading-relaxed text-muted">
-            남녀 같은 수로 모이는 2시간 볼더링.
-            <br />
-            모임과 프로필은 로그인 후에 볼 수 있어요.
-          </p>
         </header>
 
         <div className="mx-auto mt-8 flex max-w-sm flex-col gap-2">

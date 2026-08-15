@@ -35,16 +35,11 @@
 
   /* ── Hero ── */
   header{padding:44px 0 40px;position:relative;overflow:hidden}
-  /* 첫 화면으로 돌아가기 — 스크롤해도 계속 떠 있는다.
-     본문 칼럼은 50%±220px. 버튼 오른쪽 끝이 칼럼 왼쪽에 닿도록 밀어
-     글자를 가리지 않게 한다(넓은 화면). 좁은 화면은 그만한 여백이 없어
-     6px 까지만 붙이고, 대신 반투명 배경으로 뒤 글자가 비쳐 보이게 한다. */
+  /* 첫 화면으로 돌아가기 — 페이지 맨 위에만 둔다.
+     떠 있게 하면 스크롤 중 본문 글자를 가려서, 내용과 같이 올라가게 한다. */
   .back{
-    position:fixed;z-index:20;top:16px;left:max(6px, calc(50% - 254px));
-    width:34px;height:34px;border-radius:50%;
-    background:color-mix(in srgb, var(--surface) 72%, transparent);
-    -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
-    border:1px solid var(--line);color:var(--muted);
+    position:absolute;top:0;left:0;width:34px;height:34px;border-radius:50%;
+    background:var(--surface);border:1px solid var(--line);color:var(--muted);
     display:flex;align-items:center;justify-content:center;
     font-size:17px;line-height:1;text-decoration:none;
   }
@@ -241,9 +236,8 @@
 <div class="wrap">
 
   <!-- HERO -->
-  <a class="back" href="/" aria-label="첫 화면으로">←</a>
-
   <header>
+    <a class="back" href="/" aria-label="첫 화면으로">←</a>
     <p class="brand">HOBIDAY<span>하비데이</span></p>
     <span class="badge">8월 31일 오픈 · 사전 가입 모집중</span>
     <h1>클라이밍 하러 갔다가,<br><em>인연</em>을 만났다</h1>

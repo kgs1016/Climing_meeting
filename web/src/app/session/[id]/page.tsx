@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { levelRangeLabel, missionLevel } from "@/lib/levels";
+import { levelRangeLabel } from "@/lib/levels";
 import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
 import {
@@ -53,7 +53,6 @@ export default function SessionDetail({
 
   const left = slotsLeft(s);
   const full = left.male <= 0 && left.female <= 0;
-  const mission = missionLevel(s.levelMin, s.levelMax);
   const joined = s.myStatus === "confirmed" || s.myStatus === "waiting";
 
   const badges = [
@@ -167,21 +166,18 @@ export default function SessionDetail({
           ))}
         </div>
         <p className="mt-2 text-[12px] text-muted">
-          프로필은 공개되지 않아요. 모임이 시작되면 라운드마다 공통점 카드로 서로를
-          알아가요.
+          목록에서는 프로필이 공개되지 않아요.{" "}
+          <b className="text-ink">확정되면 서로 프로필을 볼 수 있어요.</b>
         </p>
       </section>
 
-      {/* 미션 */}
+      {/* 영상 인증 */}
       <section className="mt-5 rounded-2xl border border-line bg-surface p-4">
-        <h2 className="text-[14px] font-bold">🎥 함께 미션</h2>
+        <h2 className="text-[14px] font-bold">🎥 등반 인증</h2>
         <p className="mt-1.5 text-[13px] leading-relaxed text-muted">
-          라운드마다 짝과 함께{" "}
-          <b className="text-ink">
-            L{mission.id} {mission.name}({mission.colors})
-          </b>{" "}
-          이상 2문제에 도전하고 서로 영상을 찍어줘요. 완등 못 해도 영상만 올리면
-          인정! 성공하면 크레딧이 쌓여요.
+          모임에서 등반한 영상을 자유롭게 올리면 크레딧이 쌓여요. 서로 찍어주면
+          되고, <b className="text-ink">완등 못 해도 괜찮아요.</b> 영상은 나만 볼 수
+          있고 내 보관함에 남아요.
         </p>
       </section>
 

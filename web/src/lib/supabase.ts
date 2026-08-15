@@ -205,7 +205,8 @@ export async function upsertMyProfileDb(p: MyProfile, isPublic: boolean) {
 
 /* ── 모임 진행 (F 화면) ── */
 
-export interface RoomPartner {
+/** 확정된 참가자. 모임 목록은 블라인드지만 확정자끼리는 프로필이 열린다. */
+export interface RoomPerson {
   id: string;
   nickname: string;
   age: number;
@@ -217,16 +218,14 @@ export interface RoomPartner {
   area: string;
   mbti: string;
   intro: string | null;
+  photo: string | null;
+  is_me: boolean;
 }
 
-export interface RoomRound {
-  round: number;
-  starts_at: string;
-  card_open_at: string;
-  is_open: boolean;
-  /** 라운드가 열리기 전엔 서버가 null 로 내려준다 */
-  partner: RoomPartner | null;
-  mission_done: boolean;
+export interface RoomVideo {
+  id: string;
+  video_url: string;
+  created_at: string;
 }
 
 export interface Room {
@@ -238,20 +237,17 @@ export interface Room {
     capacity: 1 | 2 | 3;
     intensity: "chill" | "hard";
     after_meal: boolean;
+    note: string | null;
   };
-  me: { id: string; gender: "m" | "f"; level: LevelId; slot: number };
-  rounds: RoomRound[];
-  warmup_min: number;
-  room_ends_at: string;
+  me: { id: string; gender: "m" | "f"; level: LevelId };
+  /** 성비 기준 확정 인원 — n:n 의 n */
+  matched: number;
+  people: RoomPerson[];
+  videos: RoomVideo[];
   selection_open: boolean;
 }
 
-export type RoomError =
-  | "no_profile"
-  | "not_found"
-  | "not_confirmed"
-  | "not_enough"
-  | "overflow";
+export type RoomError = "no_profile" | "not_found" | "not_confirmed";
 
 export async function fetchRoom(
   id: string
@@ -265,16 +261,22 @@ export async function fetchRoom(
   return { room: d };
 }
 
-export async function markMissionDone(id: string, round: number, video?: string) {
+/** 영상 경로를 모임에 등록한다 (크레딧은 모임당 1회) */
+export async function addSessionVideo(id: string, path: string) {
   const sb = getSupabase();
   if (!sb) return { error: "no_client" };
-  const { data, error } = await sb.rpc("mission_done", {
+  const { data, error } = await sb.rpc("session_video_add", {
     p_session: id,
-    p_round: round,
-    p_video: video ?? null,
+    p_video: path,
   });
   if (error) return { error: error.message };
   return data as { ok?: boolean; error?: string; earned?: number; balance?: number };
+}
+
+export async function deleteSessionVideo(videoId: string) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.rpc("session_video_delete", { p_video: videoId });
 }
 
 export async function submitSelection(id: string, chosen: string[]) {
@@ -312,11 +314,11 @@ export async function fetchMatches(id: string) {
 const VIDEO_BUCKET = "mission-videos";
 export const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // 버킷 설정과 같은 값
 
-/** 경로 규칙: {user_id}/{session_id}/{round}.{확장자}
- *  첫 폴더가 업로더 uuid 라서 스토리지 정책이 남의 칸 쓰기를 막는다. */
-export async function uploadMissionVideo(
+/** 경로 규칙: {user_id}/{session_id}/{시각}.{확장자}
+ *  첫 폴더가 업로더 uuid 라서 스토리지 정책이 남의 칸 쓰기를 막는다.
+ *  한 모임에 여러 개 올릴 수 있어야 하므로 파일명에 시각을 넣는다. */
+export async function uploadSessionVideo(
   sessionId: string,
-  round: number,
   file: File
 ): Promise<{ path?: string; error?: string }> {
   const sb = getSupabase();
@@ -325,11 +327,11 @@ export async function uploadMissionVideo(
   if (file.size > VIDEO_MAX_BYTES) return { error: "too_large" };
 
   const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
-  const path = `${user.id}/${sessionId}/${round}.${ext}`;
+  const path = `${user.id}/${sessionId}/${Date.now()}.${ext}`;
 
   const { error } = await sb.storage
     .from(VIDEO_BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type || undefined });
+    .upload(path, file, { contentType: file.type || undefined });
   if (error) return { error: error.message };
   return { path };
 }
@@ -348,9 +350,10 @@ export async function fetchMyVideos() {
   const { data, error } = await sb.rpc("my_videos");
   if (error) return null;
   return data as {
+    id: string;
     session_id: string;
-    round: number;
     video_url: string;
+    created_at: string;
     gym: string;
     starts_at: string;
   }[];

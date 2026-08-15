@@ -73,7 +73,7 @@ export default function NewSession() {
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("15:00");
   const [endTime, setEndTime] = useState("17:00");
-  const [capacity, setCapacity] = useState<2 | 3>(2);
+  const [capacity, setCapacity] = useState<1 | 2 | 3>(2);
   const [levelMin, setLevelMin] = useState<LevelId>(2);
   const [levelMax, setLevelMax] = useState<LevelId>(3);
   const [ageMin, setAgeMin] = useState<number>(27);
@@ -208,6 +208,9 @@ export default function NewSession() {
 
         <Field label="정원">
           <div className="flex gap-1.5">
+            <Chip active={capacity === 1} onClick={() => setCapacity(1)}>
+              1:1 (2명)
+            </Chip>
             <Chip active={capacity === 2} onClick={() => setCapacity(2)}>
               2:2 (4명)
             </Chip>
@@ -215,6 +218,11 @@ export default function NewSession() {
               3:3 (6명)
             </Chip>
           </div>
+          <p className="mt-1.5 text-[12px] leading-relaxed text-muted">
+            {capacity === 1
+              ? "워밍업 20분 + 라운드 1회. 로테이션 없이 둘이서만 등반해요."
+              : `워밍업 20분 + 라운드 ${capacity}회 (약 ${20 + capacity * 30}분). 모든 이성과 한 번씩 짝이 돼요.`}
+          </p>
         </Field>
 
         <Field label="레벨 범위 (인접 1단계까지)">

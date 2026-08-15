@@ -12,7 +12,7 @@ export interface Session {
   date: string; // "토 8/1"
   start: string; // "15:00"
   end: string; // "17:00"
-  capacity: 2 | 3; // n:n
+  capacity: 1 | 2 | 3; // n:n (1 = 1:1)
   levelMin: LevelId;
   levelMax: LevelId;
   ageMin: number; // 25 = 20대 중후반 시작점

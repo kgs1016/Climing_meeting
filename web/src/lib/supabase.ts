@@ -50,7 +50,7 @@ export interface DbSession {
   gym: string;
   starts_at: string;
   ends_at: string;
-  capacity: 2 | 3;
+  capacity: 1 | 2 | 3;
   level_min: LevelId;
   level_max: LevelId;
   age_min: number;
@@ -108,7 +108,7 @@ export async function createSession(p: {
   gym: string;
   startsAt: string; // ISO
   endsAt: string;
-  capacity: 2 | 3;
+  capacity: 1 | 2 | 3;
   levelMin: LevelId;
   levelMax: LevelId;
   ageMin: number;
@@ -235,7 +235,7 @@ export interface Room {
     gym: string;
     starts_at: string;
     ends_at: string;
-    capacity: 2 | 3;
+    capacity: 1 | 2 | 3;
     intensity: "chill" | "hard";
     after_meal: boolean;
   };

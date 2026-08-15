@@ -24,6 +24,9 @@ import {
 
 export default function Me() {
   const router = useRouter();
+  // 카카오 계정은 이메일이 없을 수 있다. 이메일은 "표시용" 일 뿐이라
+  // 로그아웃·탈퇴는 로그인 여부(authed)로 판단해야 한다.
+  const [authed, setAuthed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [videoCount, setVideoCount] = useState(0);
@@ -47,7 +50,8 @@ export default function Me() {
         router.replace("/login");
         return;
       }
-      setEmail(user.email ?? "");
+      setAuthed(true);
+      setEmail(user.email ?? null);
       const [prof, vids, cr] = await Promise.all([
         fetchMyProfileDb(),
         fetchMyVideos(),
@@ -206,7 +210,7 @@ export default function Me() {
             )}
           </section>
 
-          {email && (
+          {authed && (
             <button
               onClick={logout}
               className="mt-4 w-full rounded-xl border border-line py-3 text-[13.5px] font-bold text-muted"
@@ -215,7 +219,7 @@ export default function Me() {
             </button>
           )}
 
-          {email &&
+          {authed &&
             (!leaving ? (
               <button
                 onClick={() => setLeaving(true)}

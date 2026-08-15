@@ -9,8 +9,7 @@ import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
 import {
   CREDIT_LABELS,
-  CREDIT_MISSION_DONE,
-  CREDIT_MISSION_VIDEO,
+  CREDIT_SESSION_VIDEO,
   REQUEST_COST,
   getSupabase,
   hasSupabase,
@@ -162,9 +161,8 @@ export default function Me() {
                 ))
               )}
               <p className="border-t border-line px-4 py-2.5 text-[11.5px] leading-relaxed text-muted">
-                관심 1회에 {REQUEST_COST.toLocaleString()}크레딧을 써요. 모임에서
-                미션을 하면 쌓여요 — 영상까지 올리면 한 번에{" "}
-                {(CREDIT_MISSION_DONE + CREDIT_MISSION_VIDEO).toLocaleString()}.
+                관심 1회에 {REQUEST_COST}크레딧을 써요. 모임에서 등반 영상을
+                올리면 한 번에 {CREDIT_SESSION_VIDEO}크레딧이 쌓여요.
               </p>
             </section>
           )}

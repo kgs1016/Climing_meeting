@@ -15,7 +15,7 @@ import {
   fetchSessions,
   fetchPeople,
   fetchMyProfileDb,
-  CREDIT_MISSION_VIDEO,
+  CREDIT_SESSION_VIDEO,
   REQUEST_COST,
   fetchAppFlags,
   fetchCredits,
@@ -134,7 +134,7 @@ export default function Home() {
       return alert(
         `크레딧이 부족해요.\n` +
           `관심 1회 = ${r.cost?.toLocaleString()}크레딧 · 지금 ${r.balance?.toLocaleString()}크레딧이에요.\n\n` +
-          `모임에서 미션을 하면 쌓여요 (영상까지 올리면 +${CREDIT_MISSION_VIDEO.toLocaleString()}).`
+          `모임에서 등반 영상을 올리면 +${CREDIT_SESSION_VIDEO} 크레딧이 쌓여요.`
       );
     }
     if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);

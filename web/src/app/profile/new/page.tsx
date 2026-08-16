@@ -292,15 +292,28 @@ export default function ProfileNew() {
           />
         </Field>
 
+        {/* 성별은 처음 한 번만 고른다 — 성비 매칭·이성 목록·관심의 기준이라
+            나중에 바꾸면 이미 확정된 모임과 어긋난다 (DB 에서도 막는다) */}
         <Field label="성별">
-          <div className="flex gap-1.5">
-            <Chip active={gender === "f"} onClick={() => setGender("f")}>
-              여성
-            </Chip>
-            <Chip active={gender === "m"} onClick={() => setGender("m")}>
-              남성
-            </Chip>
-          </div>
+          {editing ? (
+            <>
+              <span className="inline-block rounded-full border border-line bg-surface2 px-3.5 py-2 text-[13px] font-semibold text-muted">
+                {gender === "f" ? "여성" : "남성"}
+              </span>
+              <p className="mt-1.5 text-[12px] text-muted">
+                성별은 나중에 바꿀 수 없어요.
+              </p>
+            </>
+          ) : (
+            <div className="flex gap-1.5">
+              <Chip active={gender === "f"} onClick={() => setGender("f")}>
+                여성
+              </Chip>
+              <Chip active={gender === "m"} onClick={() => setGender("m")}>
+                남성
+              </Chip>
+            </div>
+          )}
         </Field>
 
         <div className="grid grid-cols-2 gap-3">

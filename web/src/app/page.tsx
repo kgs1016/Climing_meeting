@@ -442,6 +442,22 @@ export default function Home() {
             여기에는 <b className="text-ink">이성 프로필만</b> 보여요.
           </p>
 
+          {/* 이성만 걸러 오므로 빈 경우가 생긴다. 아무것도 안 그리면
+              고장난 것처럼 보인다 — 왜 비었는지 말해준다. */}
+          {people.length === 0 && (
+            <div className="py-12 text-center">
+              <p className="text-3xl">🧗</p>
+              <p className="mt-2 text-[14px] font-bold">
+                아직 볼 수 있는 프로필이 없어요
+              </p>
+              <p className="mt-1 text-[12.5px] leading-relaxed text-muted">
+                프로필을 공개한 이성 회원이 생기면
+                <br />
+                여기에 바로 보여요
+              </p>
+            </div>
+          )}
+
           {people.map((p) => (
             <div
               key={p.id}

@@ -37,9 +37,9 @@ export default function SessionDetail({
       setS(MOCK_SESSIONS.find((x) => x.id === id) ?? null);
       return;
     }
-    const rows = await fetchSessions();
+    const [rows, user] = await Promise.all([fetchSessions(), currentUser()]);
     const row = rows?.find((r) => r.id === id);
-    setS(row ? toSession(row) : null);
+    setS(row ? toSession(row, undefined, user?.id) : null);
     if (row?.host_photo) {
       setHostPhoto((await signedPhotoUrls([row.host_photo]))[row.host_photo] ?? null);
     }
@@ -366,8 +366,8 @@ export default function SessionDetail({
 
       {s.myStatus === "confirmed" && (
         <div className="mt-5 flex flex-col gap-2">
-          {/* 정원이 다 차면 참가자 전원이 한 방에 모인다 */}
-          {full && (
+          {/* 모임이 성사돼야 방이 열린다 — 자리가 남아도 조기 확정이면 열린다 */}
+          {s.status === "confirmed" && (
             <Link
               href="/chat#session"
               className="block rounded-xl border border-mint/50 bg-mint/10 py-3.5 text-center text-[14.5px] font-bold text-mint"
@@ -398,12 +398,16 @@ export default function SessionDetail({
         }`}
         onClick={onJoin}
       >
+        {/* "확정" 이 두 가지를 뜻한다 — 내 자리가 잡혔다 · 모임이 성사됐다.
+            성비가 안 맞으면 자리는 잡혀도 모임은 아직 안 열린다. */}
         {s.iAmHost
           ? "내가 연 모임이에요"
           : joined
-            ? s.myStatus === "confirmed"
-              ? "✓ 확정됐어요"
-              : "대기 중 · 자리가 나면 자동 확정"
+            ? s.myStatus !== "confirmed"
+              ? "대기 중 · 자리가 나면 자동 확정"
+              : s.status === "confirmed"
+                ? "✓ 모임이 확정됐어요"
+                : "✓ 자리 잡았어요 · 성비가 맞으면 확정돼요"
             : busy
               ? "신청 중…"
               : full

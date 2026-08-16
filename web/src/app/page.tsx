@@ -93,7 +93,7 @@ export default function Home() {
       const [rows, ppl] = await Promise.all([fetchSessions(), fetchPeople()]);
       if (prof) setMe(prof);
       if (rows) {
-        setSessions(rows.map((r) => toSession(r, prof?.homeGym)));
+        setSessions(rows.map((r) => toSession(r, prof?.homeGym, user.id)));
         setLive(true);
       }
       // 비공개 버킷이라 표시용 서명 URL 을 한 번에 받아온다.

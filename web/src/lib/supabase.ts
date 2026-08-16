@@ -75,7 +75,13 @@ export interface DbSession {
   my_ack: boolean;
 }
 
-export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatus: string | null } {
+export function toSession(
+  r: DbSession,
+  myHomeGym?: string,
+  /* 내 user id — 호스트 판별용. session_list 가 i_am_host 를 안 내려주는
+     (마이그레이션 이전) DB 에서도 host_id 로 판단할 수 있게 받아둔다. */
+  myId?: string
+): Session & { myStatus: string | null } {
   const st = new Date(r.starts_at);
   const en = new Date(r.ends_at);
   const hm = (d: Date) =>
@@ -99,9 +105,9 @@ export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatu
     status: r.status === "open" ? "open" : "confirmed",
     isAway: myHomeGym ? r.gym !== myHomeGym : false,
     myStatus: r.my_status,
-    iAmHost: r.i_am_host,
-    earlyConfirmAt: r.early_confirm_at,
-    myAck: r.my_ack,
+    iAmHost: r.i_am_host ?? (!!myId && r.host_id === myId),
+    earlyConfirmAt: r.early_confirm_at ?? null,
+    myAck: r.my_ack ?? false,
     host: r.host_nickname
       ? {
           id: r.host_id!,

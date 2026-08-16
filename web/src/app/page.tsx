@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { isProfileComplete } from "@/lib/profileGate";
 import SessionCard from "@/components/SessionCard";
 import ProfileTodo from "@/components/ProfileTodo";
@@ -31,7 +30,6 @@ import {
 const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
 
 export default function Home() {
-  const router = useRouter();
   // Supabase 키가 없을 때만 목데이터로 화면을 본다 (개발 폴백).
   // 실제 배포에선 목데이터를 초기값으로 두면 안 된다 — 확인이 끝나기 전에
   // 존재하지 않는 모임이 1초쯤 그려진다.
@@ -39,7 +37,6 @@ export default function Home() {
   const [tab, setTab] = useState<"session" | "people">("session");
   const [me, setMe] = useState<MyProfile | null>(null);
   const [authed, setAuthed] = useState<boolean | null>(null);
-  const [onboarding, setOnboarding] = useState(false);
   const [flags, setFlags] = useState<AppFlags | null>(null);
   const [ready, setReady] = useState(mockMode);
   const [sessions, setSessions] = useState<Session[]>(mockMode ? MOCK_SESSIONS : []);
@@ -72,13 +69,10 @@ export default function Home() {
       // 보이는 걸 막으려고 조회 자체를 하지 않는다.
       if (!user) return;
 
-      // 프로필(사진 포함)을 먼저 완성해야 둘러볼 수 있다
+      // 프로필(사진 포함)을 먼저 완성해야 둘러볼 수 있다.
+      // 막는 건 RequireProfile 이 레이아웃에서 한다 — 여기서는 조회만 멈춘다.
       const prof = await fetchMyProfileDb();
-      if (!isProfileComplete(prof)) {
-        setOnboarding(true);
-        router.replace("/profile/new");
-        return;
-      }
+      if (!isProfileComplete(prof)) return;
       setMe(prof);
 
       // 오픈 전에는 모임·사람을 잠근다 (대시보드 app_config 로 켠다)
@@ -154,14 +148,6 @@ export default function Home() {
         (r.spent ? `크레딧 -${r.cost} (남은 ${r.balance})` : "수락하면 채팅이 열려요.")
     );
   };
-
-  // 프로필 작성 화면으로 넘어가는 중
-  if (onboarding)
-    return (
-      <main className="px-4 pt-24 text-center text-muted">
-        프로필 작성으로 이동 중…
-      </main>
-    );
 
 
   // 오픈 전 대기 화면 — 가입·프로필은 끝냈고 기능만 잠긴 상태

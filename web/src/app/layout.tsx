@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import RequireProfile from "@/components/RequireProfile";
 
 export const metadata: Metadata = {
   title: "하비데이 HOBIDAY",
@@ -45,7 +46,8 @@ export default function RootLayout({
             paddingBottom: "calc(5rem + env(safe-area-inset-bottom))",
           }}
         >
-          {children}
+          {/* 프로필이 없으면 어느 화면으로 들어와도 여기서 막힌다 */}
+          <RequireProfile>{children}</RequireProfile>
         </div>
         <BottomNav />
       </body>

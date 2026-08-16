@@ -107,7 +107,7 @@ export default function SessionCard({
             s.iAmHost || full ? "bg-surface2 text-muted" : "bg-accent text-white"
           }`}
         >
-          {s.iAmHost ? "내가 연 모임" : full ? "대기 신청" : "참여 신청"}
+          {s.iAmHost ? "내가 연 모임" : full ? "마감" : "참여 신청"}
         </span>
       </div>
     </Link>

@@ -242,17 +242,100 @@ export async function acceptConfirm(id: string) {
   };
 }
 
+/* ── 신청함 ──
+   호스트 승인제 — 신청은 대기로 들어가고 호스트가 받아야 확정된다. */
+
+/** 내가 넣은 신청 */
+export interface MySignup {
+  id: string;
+  gym: string;
+  starts_at: string;
+  ends_at: string;
+  capacity: 1 | 2;
+  session_status: string;
+  my_status: "waiting" | "confirmed" | "cut";
+  host_nickname: string | null;
+  host_photo: string | null;
+}
+
+/** 내가 연 모임에 온 신청 — 받을지 정하려면 프로필이 보여야 한다 */
+export interface HostedRequest {
+  session_id: string;
+  gym: string;
+  starts_at: string;
+  capacity: 1 | 2;
+  created_at: string;
+  user_id: string;
+  nickname: string;
+  age: number;
+  gender: "m" | "f";
+  level: LevelId;
+  career: CareerId | null;
+  height: number | null;
+  home_gym: string;
+  area: string;
+  mbti: string | null;
+  intro: string | null;
+  photo: string | null;
+  same_gender_confirmed: number;
+}
+
+/** 호스트가 걸어둔 조기 확정 제안 */
+export interface ConfirmProposal {
+  session_id: string;
+  gym: string;
+  starts_at: string;
+  capacity: 1 | 2;
+  early_confirm_at: string;
+  host_nickname: string | null;
+  host_photo: string | null;
+  matched: number;
+}
+
 export async function fetchMySignups() {
   const sb = getSupabase();
   if (!sb) return null;
   const { data, error } = await sb.rpc("my_signups");
   if (error) return null;
-  return data as {
-    id: string;
-    gym: string;
-    starts_at: string;
-    my_status: string;
-  }[];
+  return data as MySignup[];
+}
+
+export async function fetchHostedRequests() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_hosted_requests");
+  if (error) return null;
+  return data as HostedRequest[];
+}
+
+export async function fetchConfirmProposals() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_confirm_proposals");
+  if (error) return null;
+  return data as ConfirmProposal[];
+}
+
+export async function approveSignup(sessionId: string, userId: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_approve", {
+    p_session: sessionId,
+    p_user: userId,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; chat_opened?: boolean; error?: string };
+}
+
+export async function rejectSignup(sessionId: string, userId: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_reject", {
+    p_session: sessionId,
+    p_user: userId,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
 }
 
 /* ── 프로필 ── */
@@ -753,7 +836,11 @@ export async function fetchInboxCounts() {
   const { data, error } = await sb.rpc("inbox_counts");
   if (error) return null;
   return data as {
+    /** 신청함 배지 = 내가 답해야 하는 것들의 합 (관심 + 모임 신청 + 확정 제안) */
     requests: number;
+    likes: number;
+    hosted: number;
+    proposals: number;
     sent_today: number;
     daily_limit: number;
     unread_messages: number;

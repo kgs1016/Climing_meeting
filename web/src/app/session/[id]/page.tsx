@@ -147,13 +147,11 @@ export default function SessionDetail({
     const r = await joinSession(s.id);
     setBusy(false);
     if (r.error === "is_host") return alert("내가 연 모임이에요!");
+    if (r.error === "full") return alert("자리가 이미 다 찼어요.");
     if (r.error) return alert(`신청 실패: ${r.error}`);
+    // 호스트 승인제 — 신청은 전부 대기로 들어간다
     alert(
-      r.status !== "confirmed"
-        ? "대기 신청됐어요. 자리가 나면 자동으로 확정돼요."
-        : r.chat_opened
-          ? "정원이 다 찼어요! 모임 채팅방이 열렸습니다 🎉\n채팅 → 모임 채팅에서 만나요."
-          : "확정됐어요! 모임에서 만나요 🧗"
+      "신청했어요! 호스트가 확인하면 알려드릴게요.\n신청함 → 보낸 신청에서 상태를 볼 수 있어요."
     );
     load();
   };
@@ -386,7 +384,7 @@ export default function SessionDetail({
 
       <button
         // 내가 연 모임에는 신청할 수 없다
-        disabled={busy || joined || s.iAmHost}
+        disabled={busy || joined || s.iAmHost || full}
         className={`mt-6 mb-8 w-full rounded-xl py-3.5 text-[15px] font-bold disabled:opacity-70 ${
           s.iAmHost
             ? "bg-surface2 text-muted"
@@ -411,7 +409,7 @@ export default function SessionDetail({
             : busy
               ? "신청 중…"
               : full
-                ? "대기 신청하기"
+                ? "자리가 다 찼어요"
                 : "참여 신청하기"}
       </button>
     </main>

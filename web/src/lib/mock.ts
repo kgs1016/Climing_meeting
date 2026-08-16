@@ -24,6 +24,18 @@ export interface Session {
   femaleJoined: number;
   status: SessionStatus;
   isAway?: boolean; // 내 홈짐과 다른 짐 (🗺 원정)
+  /* 모임을 연 사람. 참가자와 달리 확정 전에도 공개한다.
+     개설자가 탈퇴하면 host_id 가 null 이 되므로 없을 수 있다. */
+  host?: SessionHost;
+}
+
+export interface SessionHost {
+  id: string;
+  nickname: string;
+  photo?: string;
+  age?: number;
+  area?: string;
+  level?: LevelId;
 }
 
 export interface Person {
@@ -58,6 +70,7 @@ export const MOCK_SESSIONS: Session[] = [
     maleJoined: 2,
     femaleJoined: 1,
     status: "open",
+    host: { id: "p1", nickname: "서연", age: 27, area: "연남동", level: 3 },
   },
   {
     id: "s2",
@@ -76,6 +89,7 @@ export const MOCK_SESSIONS: Session[] = [
     maleJoined: 1,
     femaleJoined: 1,
     status: "open",
+    host: { id: "p3", nickname: "하은", age: 31, area: "상수동", level: 2 },
   },
   {
     id: "s3",
@@ -94,6 +108,7 @@ export const MOCK_SESSIONS: Session[] = [
     femaleJoined: 2,
     status: "confirmed",
     isAway: true,
+    host: { id: "p2", nickname: "지훈", age: 29, area: "망원동", level: 3 },
   },
   {
     id: "s4",
@@ -112,6 +127,7 @@ export const MOCK_SESSIONS: Session[] = [
     maleJoined: 0,
     femaleJoined: 1,
     status: "open",
+    host: { id: "p4", nickname: "민지", age: 26, area: "연희동", level: 4 },
   },
 ];
 

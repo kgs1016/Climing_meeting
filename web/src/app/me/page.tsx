@@ -158,8 +158,7 @@ export default function Me() {
             <section className="mt-2 overflow-hidden rounded-2xl border border-line bg-surface">
               {credits.history.length === 0 ? (
                 <p className="px-4 py-4 text-[12.5px] leading-relaxed text-muted">
-                  아직 내역이 없어요. 모임에서 미션을 하면 쌓여요 — 영상까지
-                  올리면 더 많이 받아요.
+                  아직 내역이 없어요. 모임에서 등반 영상을 올리면 쌓여요.
                 </p>
               ) : (
                 credits.history.map((h, i) => (

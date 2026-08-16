@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { levelRangeLabel } from "@/lib/levels";
+import { level, levelRangeLabel } from "@/lib/levels";
 import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
 import {
@@ -12,6 +12,7 @@ import {
   fetchSessions,
   fetchMyProfileDb,
   joinSession,
+  signedPhotoUrls,
   toSession,
 } from "@/lib/supabase";
 
@@ -25,6 +26,7 @@ export default function SessionDetail({
   const { id } = use(params);
   const router = useRouter();
   const [s, setS] = useState<S | null | undefined>(undefined);
+  const [hostPhoto, setHostPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
@@ -35,6 +37,9 @@ export default function SessionDetail({
     const rows = await fetchSessions();
     const row = rows?.find((r) => r.id === id);
     setS(row ? toSession(row) : null);
+    if (row?.host_photo) {
+      setHostPhoto((await signedPhotoUrls([row.host_photo]))[row.host_photo] ?? null);
+    }
   };
 
   useEffect(() => {
@@ -166,10 +171,53 @@ export default function SessionDetail({
           ))}
         </div>
         <p className="mt-2 text-[12px] text-muted">
-          목록에서는 프로필이 공개되지 않아요.{" "}
-          <b className="text-ink">확정되면 서로 프로필을 볼 수 있어요.</b>
+          다른 참가자는 <b className="text-ink">확정되면</b> 서로 프로필을 볼 수
+          있어요. 모임을 연 호스트는 아래에서 지금 볼 수 있어요.
         </p>
       </section>
+
+      {/* 호스트 — 눌러서 프로필 전체 보기 */}
+      {s.host && (
+        <section className="mt-4">
+          <h2 className="mb-2 text-[14px] font-bold">호스트 정보</h2>
+          <Link
+            href={`/session/${s.id}/host`}
+            className="flex items-center gap-3.5 rounded-2xl border border-line bg-surface p-4 active:scale-[0.99] transition-transform"
+          >
+            {hostPhoto ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={hostPhoto}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-surface2 text-xl">
+                🧗
+              </span>
+            )}
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[15px] font-extrabold">
+                {s.host.nickname}
+                {s.host.age && (
+                  <span className="ml-1.5 text-[12.5px] font-medium text-muted">
+                    {s.host.age}
+                  </span>
+                )}
+              </p>
+              <p className="mt-0.5 truncate text-[12.5px] text-muted">
+                {[
+                  s.host.area,
+                  s.host.level && `L${s.host.level} ${level(s.host.level).name}`,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </p>
+            </div>
+            <span className="shrink-0 text-muted">›</span>
+          </Link>
+        </section>
+      )}
 
       {/* 영상 인증 */}
       <section className="mt-5 rounded-2xl border border-line bg-surface p-4">

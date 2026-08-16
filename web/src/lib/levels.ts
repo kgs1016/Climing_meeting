@@ -28,11 +28,6 @@ export function levelRangeLabel(min: LevelId, max: LevelId): string {
   return `L${min} ${level(min).name} ~ L${max} ${level(max).name} (${colors})`;
 }
 
-/** 미션 난이도 = 두 사람 중 낮은 레벨 기준 */
-export function missionLevel(a: LevelId, b: LevelId): Level {
-  return level(Math.min(a, b) as LevelId);
-}
-
 /* ── 구력 ──
    레벨만으로는 "6개월 만에 파랑"과 "3년 걸려 파랑"이 구분되지 않는다.
    실력이 같아도 대화 맥락과 태도가 달라서 별도로 받는다. */

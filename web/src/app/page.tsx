@@ -96,13 +96,14 @@ export default function Home() {
         setSessions(rows.map((r) => toSession(r, prof?.homeGym)));
         setLive(true);
       }
-      if (ppl) {
-        setPeople(ppl);
-        // 비공개 버킷이라 표시용 서명 URL 을 한 번에 받아온다
-        setPhotoUrls(
-          await signedPhotoUrls(ppl.map((x) => x.photo).filter(Boolean) as string[])
-        );
-      }
+      // 비공개 버킷이라 표시용 서명 URL 을 한 번에 받아온다.
+      // 사람 목록과 모임 호스트를 같이 넣어야 요청이 한 번으로 끝난다.
+      const paths = [
+        ...(ppl ?? []).map((x) => x.photo),
+        ...(rows ?? []).map((r) => r.host_photo),
+      ].filter(Boolean) as string[];
+      if (ppl) setPeople(ppl);
+      if (paths.length > 0) setPhotoUrls(await signedPhotoUrls(paths));
 
       const [sent, c, cr] = await Promise.all([
         fetchSentRequests(),
@@ -204,16 +205,15 @@ export default function Home() {
           <p className="text-[13.5px] font-bold">오픈하면 이런 걸 할 수 있어요</p>
           <div className="mt-3 flex flex-col gap-2.5 text-[12.5px] leading-relaxed text-muted">
             <p>
-              🧗 <b className="text-ink">모임 찾기</b> — 남녀 같은 수로 모여 2시간
-              볼더링
+              🧗 <b className="text-ink">모임 찾기</b> — 남녀 같은 수(1:1 · 2:2)로
+              모여 함께 볼더링
             </p>
             <p>
-              💌 <b className="text-ink">공통점 카드</b> — 1:1 라운드 5분 전에 상대
-              정보가 도착
+              💌 <b className="text-ink">사람 찾기</b> — 마음에 드는 사람에게 관심
+              보내기
             </p>
             <p>
-              🎥 <b className="text-ink">영상 미션</b> — 서로 등반을 찍어주고
-              크레딧 적립
+              🎥 <b className="text-ink">등반 영상</b> — 서로 찍어주고 크레딧 적립
             </p>
             <p>
               🤫 <b className="text-ink">비공개 선택</b> — 서로 고른 경우에만 채팅
@@ -368,7 +368,13 @@ export default function Home() {
                 </p>
               </div>
             ) : (
-              sessions.map((s) => <SessionCard key={s.id} session={s} />)
+              sessions.map((s) => (
+                <SessionCard
+                  key={s.id}
+                  session={s}
+                  hostPhotoUrl={s.host?.photo ? photoUrls[s.host.photo] : undefined}
+                />
+              ))
             )}
           </div>
         </>

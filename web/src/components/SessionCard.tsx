@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { levelRangeLabel } from "@/lib/levels";
+import { level, levelRangeLabel } from "@/lib/levels";
 import { slotsLeft, type Session } from "@/lib/mock";
 
 function ageLabel(min: number, max: number) {
@@ -13,7 +13,14 @@ function ageLabel(min: number, max: number) {
   return a === b ? a : `${a} ~ ${b}`;
 }
 
-export default function SessionCard({ session: s }: { session: Session }) {
+export default function SessionCard({
+  session: s,
+  hostPhotoUrl,
+}: {
+  session: Session;
+  /* 사진 버킷이 비공개라 서명 URL 을 목록에서 한 번에 받아 넘긴다 */
+  hostPhotoUrl?: string;
+}) {
   const left = slotsLeft(s);
   const full = left.male <= 0 && left.female <= 0;
 
@@ -48,6 +55,37 @@ export default function SessionCard({ session: s }: { session: Session }) {
         {s.intensity === "chill" ? "😌 가볍게" : "🔥 빡세게"}
         {s.afterMeal && <span> · 🍽 저녁까지 시간 돼요</span>}
       </p>
+
+      {/* 호스트 — 참가자와 달리 확정 전에도 보인다 */}
+      {s.host && (
+        <div className="mt-3 flex items-center gap-2.5 border-t border-line pt-3">
+          {hostPhotoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={hostPhotoUrl}
+              alt=""
+              className="h-8 w-8 shrink-0 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface2 text-[15px]">
+              🧗
+            </span>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold text-muted">호스트</p>
+            <p className="truncate text-[13px] font-bold">
+              {[
+                // 소개 페이지 목업과 같은 순서 — "서연 27 · 연남동 · L3 중급"
+                s.host.age ? `${s.host.nickname} ${s.host.age}` : s.host.nickname,
+                s.host.area,
+                s.host.level && `L${s.host.level} ${level(s.host.level).name}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 자리 현황 */}
       <div className="mt-3 flex items-center justify-between border-t border-line pt-3">

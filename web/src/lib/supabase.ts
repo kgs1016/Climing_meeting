@@ -62,6 +62,13 @@ export interface DbSession {
   m_confirmed: number;
   f_confirmed: number;
   my_status: string | null;
+  // 호스트 요약 — 탈퇴한 개설자는 전부 null 로 온다
+  host_id: string | null;
+  host_nickname: string | null;
+  host_photo: string | null;
+  host_age: number | null;
+  host_area: string | null;
+  host_level: LevelId | null;
 }
 
 export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatus: string | null } {
@@ -88,6 +95,16 @@ export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatu
     status: r.status === "open" ? "open" : "confirmed",
     isAway: myHomeGym ? r.gym !== myHomeGym : false,
     myStatus: r.my_status,
+    host: r.host_nickname
+      ? {
+          id: r.host_id!,
+          nickname: r.host_nickname,
+          photo: r.host_photo ?? undefined,
+          age: r.host_age ?? undefined,
+          area: r.host_area ?? undefined,
+          level: r.host_level ?? undefined,
+        }
+      : undefined,
   };
 }
 
@@ -102,6 +119,39 @@ export async function fetchSessions(): Promise<DbSession[] | null> {
     return null;
   }
   return data as DbSession[];
+}
+
+/** 모임을 연 사람이 프로필에 적은 것들. 프로필 id 가 아니라 모임 id 로 받는다 */
+export interface HostProfile {
+  id: string;
+  nickname: string;
+  gender: "m" | "f";
+  age: number;
+  area: string;
+  level: LevelId;
+  career: CareerId | null;
+  height: number | null;
+  home_gym: string;
+  mbti: string | null;
+  intro: string | null;
+  photo: string | null;
+  hosted: number; // 지금까지 연 모임 수
+}
+
+export async function fetchSessionHost(
+  sessionId: string
+): Promise<{ host?: HostProfile; error?: string }> {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_host", { p_session: sessionId });
+  if (error) {
+    console.error("session_host", error);
+    return { error: error.message };
+  }
+  const r = data as (HostProfile & { error?: string }) | null;
+  if (!r) return { error: "not_found" };
+  if (r.error) return { error: r.error };
+  return { host: r };
 }
 
 export async function createSession(p: {

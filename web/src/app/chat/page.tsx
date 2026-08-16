@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { level } from "@/lib/levels";
+import ReportSheet from "@/components/ReportSheet";
 import {
   currentUser,
   fetchChatMessages,
@@ -165,6 +166,7 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   const [msgs, setMsgs] = useState<ChatMessage[] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [reporting, setReporting] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -241,7 +243,7 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         <button onClick={onBack} className="text-lg text-muted">
           ←
         </button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-[17px] font-extrabold tracking-tight">
             {chat.nickname}
           </h1>
@@ -249,6 +251,13 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
             {origin(chat)} · L{chat.level} {level(chat.level).name}
           </p>
         </div>
+        <button
+          onClick={() => setReporting(true)}
+          aria-label="신고하기"
+          className="shrink-0 px-2 py-1 text-[12px] font-semibold text-muted/70"
+        >
+          신고
+        </button>
       </header>
 
       {/* min-h-0 이 없으면 flex 아이템이 내용만큼 커져서 스크롤이 안 걸린다 */}
@@ -302,6 +311,18 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
           전송
         </button>
       </form>
+
+      {reporting && (
+        <ReportSheet
+          targetId={chat.partner_id}
+          nickname={chat.nickname}
+          context="chat"
+          refId={chat.match_id}
+          onClose={() => setReporting(false)}
+          // 차단되면 이 방은 더 열리지 않는다 — 목록으로 돌려보낸다
+          onDone={onBack}
+        />
+      )}
     </div>
   );
 }

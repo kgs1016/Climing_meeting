@@ -5,6 +5,7 @@ import Link from "next/link";
 import { isProfileComplete } from "@/lib/profileGate";
 import SessionCard from "@/components/SessionCard";
 import ProfileTodo from "@/components/ProfileTodo";
+import ReportSheet from "@/components/ReportSheet";
 import { MOCK_SESSIONS, MOCK_PEOPLE, type Session, type Person } from "@/lib/mock";
 import { careerLabel, level } from "@/lib/levels";
 import { loadMyProfile, type MyProfile } from "@/lib/myProfile";
@@ -52,6 +53,8 @@ export default function Home() {
   const [reqTarget, setReqTarget] = useState<Person | null>(null);
   const [reqMsg, setReqMsg] = useState("");
   const [reqBusy, setReqBusy] = useState(false);
+  // 신고 (신고하면 차단까지 걸려 목록에서도 빠진다)
+  const [reportTarget, setReportTarget] = useState<Person | null>(null);
 
   useEffect(() => {
     if (window.location.hash === "#people") setTab("people");
@@ -490,21 +493,30 @@ export default function Home() {
                   </p>
                 )}
               </div>
-              {/* 관심 하나로 통일 — 보내면 상대 신청함에 뜨고, 수락하면 채팅이 열린다 */}
-              <button
-                disabled={sentTo.has(p.id)}
-                onClick={() => {
-                  setReqTarget(p);
-                  setReqMsg("");
-                }}
-                className={`shrink-0 rounded-lg px-3 py-2 text-[12px] font-bold ${
-                  sentTo.has(p.id)
-                    ? "border border-line text-muted"
-                    : "bg-accent text-white"
-                }`}
-              >
-                {sentTo.has(p.id) ? "보냈어요" : "관심"}
-              </button>
+              <div className="flex shrink-0 flex-col items-stretch gap-1">
+                {/* 관심 하나로 통일 — 보내면 상대 신청함에 뜨고, 수락하면 채팅이 열린다 */}
+                <button
+                  disabled={sentTo.has(p.id)}
+                  onClick={() => {
+                    setReqTarget(p);
+                    setReqMsg("");
+                  }}
+                  className={`rounded-lg px-3 py-2 text-[12px] font-bold ${
+                    sentTo.has(p.id)
+                      ? "border border-line text-muted"
+                      : "bg-accent text-white"
+                  }`}
+                >
+                  {sentTo.has(p.id) ? "보냈어요" : "관심"}
+                </button>
+                <button
+                  onClick={() => setReportTarget(p)}
+                  aria-label={`${p.nickname}님 신고하기`}
+                  className="py-1 text-[11px] font-semibold text-muted/70"
+                >
+                  신고
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -556,6 +568,19 @@ export default function Home() {
             </button>
           </div>
         </div>
+      )}
+
+      {reportTarget && (
+        <ReportSheet
+          targetId={reportTarget.id}
+          nickname={reportTarget.nickname}
+          context="profile"
+          onClose={() => setReportTarget(null)}
+          onDone={() =>
+            // 차단까지 걸렸으니 목록에서 바로 뺀다 — 새로고침을 기다리게 하지 않는다
+            setPeople((prev) => prev.filter((x) => x.id !== reportTarget.id))
+          }
+        />
       )}
     </main>
   );

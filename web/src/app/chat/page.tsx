@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { level } from "@/lib/levels";
+import ReportSheet from "@/components/ReportSheet";
 import {
   currentUser,
   fetchChatMessages,
@@ -317,12 +318,15 @@ function ChatFrame({
   onBack,
   title,
   sub,
+  action,
   onSend,
   children,
 }: {
   onBack: () => void;
   title: string;
   sub: string;
+  /** 헤더 오른쪽 — 1:1 방은 신고 버튼이 붙는다 */
+  action?: React.ReactNode;
   onSend: (body: string) => Promise<void>;
   children: React.ReactNode;
 }) {
@@ -360,12 +364,13 @@ function ChatFrame({
         <button onClick={onBack} className="text-lg text-muted">
           ←
         </button>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h1 className="truncate text-[17px] font-extrabold tracking-tight">
             {title}
           </h1>
           <p className="truncate text-[11.5px] text-muted">{sub}</p>
         </div>
+        {action}
       </header>
 
       {/* min-h-0 이 없으면 flex 아이템이 내용만큼 커져서 스크롤이 안 걸린다 */}
@@ -453,6 +458,7 @@ function Bubble({
 
 function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   const [msgs, setMsgs] = useState<ChatMessage[] | null>(null);
+  const [reporting, setReporting] = useState(false);
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -479,29 +485,52 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   };
 
   return (
-    <ChatFrame
-      onBack={onBack}
-      title={chat.nickname}
-      sub={`${origin(chat)} · L${chat.level} ${level(chat.level).name}`}
-      onSend={send}
-    >
-      {msgs === null ? (
-        <p className="pt-10 text-center text-muted">불러오는 중…</p>
-      ) : msgs.length === 0 ? (
-        <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
-          서로를 선택해서 열린 방이에요.
-          <br />
-          먼저 말을 걸어보세요 🧗
-        </p>
-      ) : (
-        <div className="flex flex-col gap-2">
-          {msgs.map((m) => (
-            <Bubble key={m.id} m={m} />
-          ))}
-          <div ref={bottom} />
-        </div>
+    <>
+      <ChatFrame
+        onBack={onBack}
+        title={chat.nickname}
+        sub={`${origin(chat)} · L${chat.level} ${level(chat.level).name}`}
+        action={
+          <button
+            onClick={() => setReporting(true)}
+            aria-label="신고하기"
+            className="shrink-0 px-2 py-1 text-[12px] font-semibold text-muted/70"
+          >
+            신고
+          </button>
+        }
+        onSend={send}
+      >
+        {msgs === null ? (
+          <p className="pt-10 text-center text-muted">불러오는 중…</p>
+        ) : msgs.length === 0 ? (
+          <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
+            서로를 선택해서 열린 방이에요.
+            <br />
+            먼저 말을 걸어보세요 🧗
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {msgs.map((m) => (
+              <Bubble key={m.id} m={m} />
+            ))}
+            <div ref={bottom} />
+          </div>
+        )}
+      </ChatFrame>
+
+      {reporting && (
+        <ReportSheet
+          targetId={chat.partner_id}
+          nickname={chat.nickname}
+          context="chat"
+          refId={chat.match_id}
+          onClose={() => setReporting(false)}
+          // 차단되면 이 방은 더 열리지 않는다 — 목록으로 돌려보낸다
+          onDone={onBack}
+        />
       )}
-    </ChatFrame>
+    </>
   );
 }
 

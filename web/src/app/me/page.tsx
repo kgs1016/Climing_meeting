@@ -194,7 +194,14 @@ export default function Me() {
               프로필 수정
               <span className="text-muted">›</span>
             </Link>
-            {["취향 설문 (다음 단계)", "내 영상 보관함 (다음 단계)", "안전 설정 (다음 단계)"].map(
+            <Link
+              href="/safety"
+              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
+            >
+              안전 설정 · 차단 목록
+              <span className="text-muted">›</span>
+            </Link>
+            {["취향 설문 (다음 단계)", "내 영상 보관함 (다음 단계)"].map(
               (item) => (
                 <button
                   key={item}

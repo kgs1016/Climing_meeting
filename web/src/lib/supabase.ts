@@ -953,3 +953,71 @@ export async function fetchPeople(me?: { id: string; gender: "m" | "f" }) {
     photo: (d.photo ?? undefined) as string | undefined,
   }));
 }
+
+/* ── 신고 · 차단 ── */
+
+/** DB 의 reports.reason 체크 제약과 같은 값이어야 한다 */
+export const REPORT_REASONS = [
+  { id: "abuse", label: "욕설·괴롭힘", hint: "모욕적인 말, 집요한 연락" },
+  { id: "sexual", label: "성적 불쾌감", hint: "원치 않는 성적 대화·사진" },
+  { id: "fake", label: "사진·정보가 달라요", hint: "다른 사람 사진, 거짓 프로필" },
+  { id: "commercial", label: "광고·영업", hint: "홍보, 다른 앱 유도, 금전 요구" },
+  { id: "noshow", label: "모임에 안 나왔어요", hint: "약속한 모임 노쇼" },
+  { id: "other", label: "그 밖의 문제", hint: "" },
+] as const;
+
+export type ReportReason = (typeof REPORT_REASONS)[number]["id"];
+export type ReportContext = "profile" | "chat" | "session";
+
+/** 신고하면 차단까지 함께 걸린다 (서버에서 처리) */
+export async function reportUser(
+  targetId: string,
+  reason: ReportReason,
+  detail?: string,
+  context: ReportContext = "profile",
+  refId?: string
+) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("report_user", {
+    p_target: targetId,
+    p_reason: reason,
+    p_detail: detail ?? null,
+    p_context: context,
+    p_ref: refId ?? null,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export async function blockUser(targetId: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("block_user", { p_target: targetId });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export async function unblockUser(targetId: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("unblock_user", { p_target: targetId });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export interface BlockedPerson {
+  blocked_id: string;
+  created_at: string;
+  nickname: string;
+  age: number;
+  home_gym: string;
+}
+
+export async function fetchMyBlocks() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_blocks");
+  if (error) return null;
+  return data as BlockedPerson[];
+}

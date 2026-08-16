@@ -583,7 +583,6 @@ export const CREDIT_LABELS: Record<string, string> = {
   profile_complete: "🧗 프로필 완성",
   early_bird: "🎁 사전 가입 혜택",
   request_extra: "💌 관심 보내기",
-  rescale: "🔁 크레딧 단위 변경",
   // 아래 둘은 로테이션 시절 적립. 지난 원장을 읽으려면 이름이 필요하다.
   mission_video: "🎥 영상 미션",
   mission_done: "✅ 미션 완료",

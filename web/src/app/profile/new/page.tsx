@@ -3,12 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CAREERS, LEVELS, type CareerId, type LevelId } from "@/lib/levels";
-import {
-  loadMyProfile,
-  saveMyProfile,
-  removeMyProfile,
-  type MyProfile,
-} from "@/lib/myProfile";
+import { loadMyProfile, saveMyProfile, type MyProfile } from "@/lib/myProfile";
 import { isProfileComplete } from "@/lib/profileGate";
 import {
   PHOTO_MAX_BYTES,
@@ -191,19 +186,6 @@ export default function ProfileNew() {
     }
     // 온보딩을 막 끝냈으면 사람 목록보다 모임 찾기로 보내는 게 자연스럽다
     router.push(onboarding ? "/" : "/#people");
-  };
-
-  const takeDown = async () => {
-    if (!confirm("사람 찾기 목록에서 내 프로필을 내릴까요?")) return;
-    if (hasSupabase()) {
-      // 삭제가 아니라 비공개 전환 — 모임 참여용 기본 정보는 유지
-      setBusy(true);
-      await upsertMyProfileDb(buildProfile(), false);
-      setBusy(false);
-    } else {
-      removeMyProfile();
-    }
-    router.push("/#people");
   };
 
   return (
@@ -420,15 +402,6 @@ export default function ProfileNew() {
           {busy ? "저장 중…" : editing ? "수정 완료" : "프로필 올리기"}
         </button>
 
-        {editing && !onboarding && (
-          <button
-            type="button"
-            onClick={takeDown}
-            className="rounded-xl border border-line py-3 text-[14px] font-bold text-muted"
-          >
-            프로필 내리기
-          </button>
-        )}
       </form>
     </main>
   );

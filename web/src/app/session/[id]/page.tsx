@@ -385,27 +385,30 @@ export default function SessionDetail({
       )}
 
       <button
-        disabled={busy || joined}
+        // 내가 연 모임에는 신청할 수 없다
+        disabled={busy || joined || s.iAmHost}
         className={`mt-6 mb-8 w-full rounded-xl py-3.5 text-[15px] font-bold disabled:opacity-70 ${
-          joined
-            ? "bg-mint/15 text-mint"
-            : full
-              ? "bg-surface2 text-muted"
-              : "bg-accent text-white"
+          s.iAmHost
+            ? "bg-surface2 text-muted"
+            : joined
+              ? "bg-mint/15 text-mint"
+              : full
+                ? "bg-surface2 text-muted"
+                : "bg-accent text-white"
         }`}
         onClick={onJoin}
       >
-        {joined
-          ? s.iAmHost
-            ? "내가 연 모임이에요"
-            : s.myStatus === "confirmed"
+        {s.iAmHost
+          ? "내가 연 모임이에요"
+          : joined
+            ? s.myStatus === "confirmed"
               ? "✓ 확정됐어요"
               : "대기 중 · 자리가 나면 자동 확정"
-          : busy
-            ? "신청 중…"
-            : full
-              ? "대기 신청하기"
-              : "참여 신청하기"}
+            : busy
+              ? "신청 중…"
+              : full
+                ? "대기 신청하기"
+                : "참여 신청하기"}
       </button>
     </main>
   );

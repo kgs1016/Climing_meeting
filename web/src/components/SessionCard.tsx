@@ -101,12 +101,13 @@ export default function SessionCard({
             <span className="text-muted"> 남음</span>
           </span>
         )}
+        {/* 내가 연 모임에는 신청할 수 없다 — 목록에서부터 눌러볼 일이 없게 */}
         <span
           className={`rounded-lg px-3.5 py-1.5 text-[13px] font-bold ${
-            full ? "bg-surface2 text-muted" : "bg-accent text-white"
+            s.iAmHost || full ? "bg-surface2 text-muted" : "bg-accent text-white"
           }`}
         >
-          {full ? "대기 신청" : "참여 신청"}
+          {s.iAmHost ? "내가 연 모임" : full ? "대기 신청" : "참여 신청"}
         </span>
       </div>
     </Link>

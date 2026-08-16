@@ -234,7 +234,6 @@ export default function ProfileNew() {
       ) : (
         <p className="mb-5 rounded-xl border border-line bg-surface2 px-4 py-3 text-[12.5px] leading-relaxed text-muted">
           여기 올린 프로필은 <b className="text-ink">사람 찾기 목록에 공개</b>돼요.
-          모임 참여는 블라인드라 프로필이 공개되지 않아요.
         </p>
       )}
 

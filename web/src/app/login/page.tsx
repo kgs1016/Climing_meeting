@@ -24,6 +24,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
+  const [otp, setOtp] = useState(""); // 가입 확인 인증번호 (메일의 6자리)
   const [providers, setProviders] = useState<Provider[]>([]);
   const [sentMail, setSentMail] = useState(false);
 
@@ -62,11 +63,11 @@ export default function Login() {
 
     setBusy(true);
     if (mode === "signup") {
-      const { data, error } = await sb.auth.signUp({
-        email,
-        password: pw,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
-      });
+      // 링크 대신 인증번호로 확인한다 — 메일 템플릿이 {{ .Token }} 을 보여주고,
+      // 사용자는 이 화면에 남아 번호만 입력한다. 메일 앱으로 넘어갔다가
+      // 낯선 브라우저에서 이어지는 흐름보다 끊김이 없고, 네이티브 앱에서는
+      // 링크가 앱 밖으로 나가버려서 사실상 이 방식만 성립한다.
+      const { data, error } = await sb.auth.signUp({ email, password: pw });
       setBusy(false);
       if (error) {
         return alert(
@@ -95,22 +96,81 @@ export default function Login() {
     }
   };
 
+  const verifyCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = otp.trim();
+    // 자릿수는 프로젝트 설정(Email OTP Length)을 따른다 — 범위로 받아
+    // 설정이 바뀌어도 화면이 깨지지 않게 한다
+    if (!/^\d{6,8}$/.test(token)) return alert("메일의 인증번호를 입력해주세요");
+
+    setBusy(true);
+    const { error } = await sb.auth.verifyOtp({ email, token, type: "signup" });
+    setBusy(false);
+    if (error) {
+      return alert(
+        error.message.includes("expired")
+          ? "인증번호가 만료됐어요. 다시 받아주세요."
+          : "인증번호가 맞지 않아요. 메일을 다시 확인해주세요."
+      );
+    }
+    // 인증과 동시에 로그인된다
+    router.push("/profile/new");
+  };
+
+  const resendCode = async () => {
+    setBusy(true);
+    const { error } = await sb.auth.resend({ type: "signup", email });
+    setBusy(false);
+    if (error) {
+      // SMTP 의 사용자당 최소 간격(20초)에 걸리면 여기로 온다
+      return alert("잠시 후 다시 시도해주세요.");
+    }
+    alert("인증번호를 다시 보냈어요.");
+  };
+
   if (sentMail) {
     return (
       <main className="px-4 pt-16 text-center">
         <p className="text-4xl">📬</p>
-        <h1 className="mt-3 text-[20px] font-extrabold">이메일 인증이 필요해요</h1>
+        <h1 className="mt-3 text-[20px] font-extrabold">인증번호를 보냈어요</h1>
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
-          <b className="text-ink">{email}</b> 로 인증 메일을 보냈어요.
+          <b className="text-ink">{email}</b> 메일함을 확인해주세요.
           <br />
-          링크를 누르면 가입이 완료돼요.
+          메일에 적힌 6자리 번호를 입력하면 가입이 완료돼요.
         </p>
+        <form onSubmit={verifyCode} className="mx-auto mt-6 max-w-[280px]">
+          <input
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            placeholder="123456"
+            // 숫자뿐이라 크게 — iOS 확대(16px 미만) 걱정도 없다
+            className="w-full rounded-xl border border-line bg-surface px-4 py-3.5 text-center text-[22px] font-extrabold tracking-[0.3em] text-ink placeholder:text-muted/40"
+          />
+          <button
+            type="submit"
+            disabled={busy || otp.length < 6}
+            className="mt-3 w-full rounded-xl bg-accent py-3.5 text-[15px] font-bold text-white disabled:opacity-40"
+          >
+            {busy ? "확인 중…" : "인증하고 가입 완료"}
+          </button>
+        </form>
+        <button
+          onClick={resendCode}
+          disabled={busy}
+          className="mt-5 text-[13px] font-semibold text-muted underline underline-offset-4 disabled:opacity-50"
+        >
+          인증번호 다시 받기
+        </button>
+        <br />
         <button
           onClick={() => {
             setSentMail(false);
+            setOtp("");
             setMode("login");
           }}
-          className="mt-6 text-[13px] font-semibold text-muted underline underline-offset-4"
+          className="mt-3 text-[13px] font-semibold text-muted/70"
         >
           로그인으로 돌아가기
         </button>

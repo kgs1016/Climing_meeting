@@ -6,8 +6,8 @@ Supabase 기본 메일은 발신자가 Supabase 로 뜨고 **템플릿을 저장
 ## 순서
 
 ### 1. 도메인
-`hobiday.kr` 등을 산다. 메일 발송에도 쓰고, Vercel 커스텀 도메인으로도 쓴다
-(`hobiday-eight.vercel.app` 보다 가입 이탈이 적다).
+**끝났다.** `hobiday.com` — Cloudflare 에서 구입, Vercel 에 연결돼 있다.
+DNS 는 Cloudflare 에서 관리한다.
 
 ### 2. Resend
 가입 → **Domains > Add Domain** → 표시되는 DNS 레코드를 도메인 관리 화면에 등록한다.
@@ -28,7 +28,7 @@ Host          smtp.resend.com
 Port          465
 Username      resend
 Password      Resend API 키
-Sender email  no-reply@hobiday.kr
+Sender email  no-reply@hobiday.com
 Sender name   하비데이
 ```
 
@@ -48,7 +48,7 @@ Magic Link · Invite 는 쓰지 않아 그대로 둔다.
 ### 5. 확인
 새 메일 주소로 가입해보고 —
 
-- 발신자가 **하비데이 &lt;no-reply@hobiday.kr&gt;** 로 뜨는지
+- 발신자가 **하비데이 &lt;no-reply@hobiday.com&gt;** 로 뜨는지
 - **스팸함이 아니라 받은편지함**에 오는지 (지메일·네이버 각각)
 - 링크를 눌러 실제로 인증이 되는지
 

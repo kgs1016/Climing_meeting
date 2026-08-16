@@ -98,9 +98,11 @@ export default function SessionDetail({
     if (r.error === "is_host") return alert("내가 연 모임이에요!");
     if (r.error) return alert(`신청 실패: ${r.error}`);
     alert(
-      r.status === "confirmed"
-        ? "확정됐어요! 모임에서 만나요 🧗"
-        : "대기 신청됐어요. 자리가 나면 자동으로 확정돼요."
+      r.status !== "confirmed"
+        ? "대기 신청됐어요. 자리가 나면 자동으로 확정돼요."
+        : r.chat_opened
+          ? "정원이 다 찼어요! 모임 채팅방이 열렸습니다 🎉\n채팅 → 모임 채팅에서 만나요."
+          : "확정됐어요! 모임에서 만나요 🧗"
     );
     load();
   };
@@ -237,12 +239,23 @@ export default function SessionDetail({
       </section>
 
       {s.myStatus === "confirmed" && (
-        <Link
-          href={`/room/${s.id}`}
-          className="mt-5 block rounded-xl border border-accent/50 bg-accent/10 py-3.5 text-center text-[14.5px] font-bold text-accent"
-        >
-          🧗 모임 진행 화면 열기
-        </Link>
+        <div className="mt-5 flex flex-col gap-2">
+          {/* 정원이 다 차면 참가자 전원이 한 방에 모인다 */}
+          {full && (
+            <Link
+              href="/chat#session"
+              className="block rounded-xl border border-mint/50 bg-mint/10 py-3.5 text-center text-[14.5px] font-bold text-mint"
+            >
+              💬 모임 채팅 열기
+            </Link>
+          )}
+          <Link
+            href={`/room/${s.id}`}
+            className="block rounded-xl border border-accent/50 bg-accent/10 py-3.5 text-center text-[14.5px] font-bold text-accent"
+          >
+            🧗 모임 진행 화면 열기
+          </Link>
+        </div>
       )}
 
       <button

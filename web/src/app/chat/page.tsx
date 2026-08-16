@@ -7,12 +7,18 @@ import {
   currentUser,
   fetchChatMessages,
   fetchChats,
+  fetchSessionChatMessages,
+  fetchSessionChats,
   hasSupabase,
   markChatRead,
+  markSessionChatRead,
   sendChat,
+  sendSessionChat,
   signedPhotoUrls,
   type Chat,
   type ChatMessage,
+  type SessionChat,
+  type SessionChatMessage,
 } from "@/lib/supabase";
 
 const when = (iso: string) => {
@@ -30,15 +36,30 @@ const when = (iso: string) => {
 const origin = (c: Chat) =>
   c.gym ? `${c.gym}에서 만났어요` : "관심을 수락해서 연결됐어요";
 
+const DAYS = ["일", "월", "화", "수", "목", "금", "토"];
+
+/** 모임방 부제 — "토 8/31 · 15:00 · 2:2" */
+const sessionSub = (c: SessionChat) => {
+  const d = new Date(c.starts_at);
+  const hm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${DAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()} · ${hm} · ${c.capacity}:${c.capacity}`;
+};
+
+type Tab = "request" | "session";
+
 export default function ChatPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
+  const [tab, setTab] = useState<Tab>("request");
   const [chats, setChats] = useState<Chat[] | null>(null);
+  const [rooms, setRooms] = useState<SessionChat[] | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [open, setOpen] = useState<Chat | null>(null);
+  const [openRoom, setOpenRoom] = useState<SessionChat | null>(null);
 
   const load = useCallback(async () => {
-    const list = await fetchChats();
+    const [list, group] = await Promise.all([fetchChats(), fetchSessionChats()]);
     setChats(list);
+    setRooms(group);
     if (list?.length)
       setPhotoUrls(
         await signedPhotoUrls(list.map((c) => c.photo).filter(Boolean) as string[])
@@ -46,6 +67,9 @@ export default function ChatPage() {
   }, []);
 
   useEffect(() => {
+    // 모임 상세의 "모임 채팅 열기" 는 /chat#session 으로 보낸다
+    if (window.location.hash === "#session") setTab("session");
+
     (async () => {
       if (!hasSupabase()) return setAuthed(false);
       const user = await currentUser();
@@ -62,6 +86,19 @@ export default function ChatPage() {
     );
     await markChatRead(c.match_id);
   };
+
+  const openSession = async (c: SessionChat) => {
+    setOpenRoom(c);
+    setRooms((list) =>
+      (list ?? []).map((x) =>
+        x.session_id === c.session_id ? { ...x, unread: 0 } : x
+      )
+    );
+    await markSessionChatRead(c.session_id);
+  };
+
+  const unreadOf = (list: { unread: number }[] | null) =>
+    (list ?? []).reduce((n, x) => n + (x.unread > 0 ? 1 : 0), 0);
 
   if (authed === false)
     return (
@@ -92,26 +129,113 @@ export default function ChatPage() {
       />
     );
 
+  if (openRoom)
+    return (
+      <SessionThread
+        room={openRoom}
+        onBack={() => {
+          setOpenRoom(null);
+          load();
+        }}
+      />
+    );
+
+  const loading = chats === null || rooms === null;
+
   return (
     <main className="px-4">
-      <header className="pt-6 pb-4">
+      <header className="pt-6 pb-3">
         <h1 className="text-[19px] font-extrabold tracking-tight">채팅</h1>
       </header>
 
-      {chats === null ? (
+      {/* 관심으로 열린 1:1 과 모임 단체방은 성격이 달라서 탭으로 나눈다 */}
+      <div className="flex border-b border-line">
+        {(
+          [
+            ["request", "관심 채팅", unreadOf(chats)],
+            ["session", "모임 채팅", unreadOf(rooms)],
+          ] as const
+        ).map(([key, label, badge]) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`flex flex-1 items-center justify-center gap-1.5 pb-2.5 pt-1 text-[15px] font-bold ${
+              tab === key ? "border-b-2 border-accent text-ink" : "text-muted"
+            }`}
+          >
+            {label}
+            {badge > 0 && (
+              <span className="min-w-[17px] rounded-full bg-accent px-1 text-[10.5px] font-extrabold leading-[17px] text-white">
+                {badge > 9 ? "9+" : badge}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
         <p className="pt-14 text-center text-muted">불러오는 중…</p>
+      ) : tab === "session" ? (
+        rooms.length === 0 ? (
+          <div className="mt-16 flex flex-col items-center gap-2 text-center">
+            <span className="text-4xl">🧗</span>
+            <p className="text-[15px] font-bold">아직 확정된 모임이 없어요</p>
+            <p className="text-[13px] leading-relaxed text-muted">
+              모임 정원이 다 차면
+              <br />
+              참가자 전원이 여기 한 방에 모여요
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 py-3 pb-6">
+            {rooms.map((c) => (
+              <button
+                key={c.session_id}
+                onClick={() => openSession(c)}
+                className="flex items-center gap-3.5 rounded-2xl border border-line bg-surface p-4 text-left"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-mint/15 text-xl">
+                  🧗
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[15px] font-extrabold">
+                    {c.gym}
+                    <span className="ml-1.5 text-[12px] font-medium text-muted">
+                      {c.members}명
+                    </span>
+                  </p>
+                  <p
+                    className={`mt-0.5 truncate text-[12.5px] ${
+                      c.unread > 0 ? "font-semibold text-ink" : "text-muted"
+                    }`}
+                  >
+                    {c.last_body ?? sessionSub(c)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="text-[11.5px] text-muted">{when(c.last_at)}</span>
+                  {c.unread > 0 && (
+                    <span className="min-w-[18px] rounded-full bg-accent px-1.5 text-center text-[11px] font-extrabold leading-[18px] text-white">
+                      {c.unread > 99 ? "99+" : c.unread}
+                    </span>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )
       ) : chats.length === 0 ? (
         <div className="mt-16 flex flex-col items-center gap-2 text-center">
-          <span className="text-4xl">💬</span>
-          <p className="text-[15px] font-bold">아직 매칭된 상대가 없어요</p>
+          <span className="text-4xl">💌</span>
+          <p className="text-[15px] font-bold">아직 연결된 상대가 없어요</p>
           <p className="text-[13px] leading-relaxed text-muted">
-            모임이 끝나고 서로 선택하면
+            보낸 관심을 상대가 수락하면
             <br />
             여기서 대화가 시작돼요
           </p>
         </div>
       ) : (
-        <div className="flex flex-col gap-2 pb-6">
+        <div className="flex flex-col gap-2 py-3 pb-6">
           {chats.map((c) => (
             <button
               key={c.match_id}
@@ -161,28 +285,10 @@ export default function ChatPage() {
   );
 }
 
-function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
-  const [msgs, setMsgs] = useState<ChatMessage[] | null>(null);
-  const [text, setText] = useState("");
-  const [busy, setBusy] = useState(false);
-  const bottom = useRef<HTMLDivElement>(null);
-
-  const load = useCallback(async () => {
-    setMsgs(await fetchChatMessages(chat.match_id));
-    // 방을 보고 있는 동안 도착한 메시지도 읽음 처리한다
-    await markChatRead(chat.match_id);
-  }, [chat.match_id]);
-
-  useEffect(() => {
-    load();
-    // 실시간 대신 폴링 — 규모가 작을 때는 이게 단순하고 확실하다
-    const t = setInterval(load, 5_000);
-    return () => clearInterval(t);
-  }, [load]);
-
-  /* 키보드가 올라오면 iOS 는 fixed 요소를 줄이지 않고 화면을 스크롤한다.
-     그러면 입력창만 보이고 헤더·대화가 화면 밖으로 밀려난다.
-     visualViewport 로 "실제 보이는 영역"을 받아 그 높이에 맞춘다. */
+/* 키보드가 올라오면 iOS 는 fixed 요소를 줄이지 않고 화면을 스크롤한다.
+   그러면 입력창만 보이고 헤더·대화가 화면 밖으로 밀려난다.
+   visualViewport 로 "실제 보이는 영역"을 받아 그 높이에 맞춘다. */
+function useKeyboardViewport() {
   const [vv, setVv] = useState<{ h: number; top: number } | null>(null);
 
   useEffect(() => {
@@ -200,27 +306,40 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
 
   // 키보드가 열렸으면 홈바 여백을 넣지 않는다 (키보드 위에 빈 틈이 생김)
   const keyboardOpen = !!vv && vv.h < window.innerHeight - 100;
+  return { vv, keyboardOpen };
+}
 
-  useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
-  }, [msgs?.length, vv?.h]);
+/* 전체화면 오버레이. 1:1 방과 모임 단체방이 같은 껍데기를 쓴다.
+   레이아웃 래퍼가 하단 네비용 padding-bottom 을 갖고 있어서, 그 안에서
+   min-h-screen + sticky 로 입력창을 붙이면 화면 밖으로 밀려난다.
+   높이는 visualViewport 값으로 직접 지정한다 (inset-0 은 키보드를 모른다). */
+function ChatFrame({
+  onBack,
+  title,
+  sub,
+  onSend,
+  children,
+}: {
+  onBack: () => void;
+  title: string;
+  sub: string;
+  onSend: (body: string) => Promise<void>;
+  children: React.ReactNode;
+}) {
+  const { vv, keyboardOpen } = useKeyboardViewport();
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const send = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const body = text.trim();
     if (!body) return;
     setBusy(true);
-    const r = await sendChat(chat.match_id, body);
+    await onSend(body);
     setBusy(false);
-    if (r.error) return alert(`전송 실패: ${r.error}`);
     setText("");
-    load();
   };
 
-  /* 전체화면 오버레이로 띄운다.
-     레이아웃 래퍼가 하단 네비용 padding-bottom 을 갖고 있어서, 그 안에서
-     min-h-screen + sticky 로 입력창을 붙이면 화면 밖으로 밀려난다.
-     높이는 visualViewport 값으로 직접 지정한다 (inset-0 은 키보드를 모른다). */
   return (
     <div
       className="fixed inset-x-0 top-0 z-40 mx-auto flex h-dvh max-w-md flex-col bg-bg px-4"
@@ -243,51 +362,16 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         </button>
         <div className="min-w-0">
           <h1 className="truncate text-[17px] font-extrabold tracking-tight">
-            {chat.nickname}
+            {title}
           </h1>
-          <p className="text-[11.5px] text-muted">
-            {origin(chat)} · L{chat.level} {level(chat.level).name}
-          </p>
+          <p className="truncate text-[11.5px] text-muted">{sub}</p>
         </div>
       </header>
 
       {/* min-h-0 이 없으면 flex 아이템이 내용만큼 커져서 스크롤이 안 걸린다 */}
-      <div className="min-h-0 flex-1 overflow-y-auto pb-3">
-        {msgs === null ? (
-          <p className="pt-10 text-center text-muted">불러오는 중…</p>
-        ) : msgs.length === 0 ? (
-          <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
-            서로를 선택해서 열린 방이에요.
-            <br />
-            먼저 말을 걸어보세요 🧗
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {msgs.map((m) => (
-              <div
-                key={m.id}
-                className={`max-w-[78%] rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed ${
-                  m.mine
-                    ? "self-end rounded-br-md bg-accent text-white"
-                    : "self-start rounded-bl-md bg-surface2 text-ink"
-                }`}
-              >
-                {m.body}
-                <span
-                  className={`ml-2 align-bottom text-[10.5px] ${
-                    m.mine ? "text-white/70" : "text-muted"
-                  }`}
-                >
-                  {when(m.created_at)}
-                </span>
-              </div>
-            ))}
-            <div ref={bottom} />
-          </div>
-        )}
-      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto pb-3">{children}</div>
 
-      <form onSubmit={send} className="flex shrink-0 gap-2 bg-bg py-3">
+      <form onSubmit={submit} className="flex shrink-0 gap-2 bg-bg py-3">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -303,5 +387,192 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         </button>
       </form>
     </div>
+  );
+}
+
+/** 말풍선 — 단체방에서는 남의 말에 보낸 사람이 붙는다 */
+function Bubble({
+  m,
+  name,
+  photoUrl,
+  isHost,
+}: {
+  m: ChatMessage;
+  name?: string | null;
+  photoUrl?: string;
+  isHost?: boolean;
+}) {
+  const bubble = (
+    <div
+      className={`max-w-full rounded-2xl px-3.5 py-2.5 text-[14px] leading-relaxed ${
+        m.mine
+          ? "rounded-br-md bg-accent text-white"
+          : "rounded-bl-md bg-surface2 text-ink"
+      }`}
+    >
+      {m.body}
+      <span
+        className={`ml-2 align-bottom text-[10.5px] ${
+          m.mine ? "text-white/70" : "text-muted"
+        }`}
+      >
+        {when(m.created_at)}
+      </span>
+    </div>
+  );
+
+  if (m.mine) return <div className="max-w-[78%] self-end">{bubble}</div>;
+
+  // 1:1 방은 상대가 한 명뿐이라 이름을 붙이지 않는다
+  if (!name) return <div className="max-w-[78%] self-start">{bubble}</div>;
+
+  return (
+    <div className="flex max-w-[86%] gap-2 self-start">
+      {photoUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={photoUrl}
+          alt=""
+          className="mt-4 h-7 w-7 shrink-0 rounded-full object-cover"
+        />
+      ) : (
+        <span className="mt-4 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface2 text-[13px]">
+          🧗
+        </span>
+      )}
+      <div className="min-w-0">
+        <p className="mb-0.5 text-[11.5px] font-semibold text-muted">
+          {name}
+          {isHost && <span className="ml-1 text-mint">· 호스트</span>}
+        </p>
+        {bubble}
+      </div>
+    </div>
+  );
+}
+
+function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
+  const [msgs, setMsgs] = useState<ChatMessage[] | null>(null);
+  const bottom = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    setMsgs(await fetchChatMessages(chat.match_id));
+    // 방을 보고 있는 동안 도착한 메시지도 읽음 처리한다
+    await markChatRead(chat.match_id);
+  }, [chat.match_id]);
+
+  useEffect(() => {
+    load();
+    // 실시간 대신 폴링 — 규모가 작을 때는 이게 단순하고 확실하다
+    const t = setInterval(load, 5_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [msgs?.length]);
+
+  const send = async (body: string) => {
+    const r = await sendChat(chat.match_id, body);
+    if (r.error) return alert(`전송 실패: ${r.error}`);
+    load();
+  };
+
+  return (
+    <ChatFrame
+      onBack={onBack}
+      title={chat.nickname}
+      sub={`${origin(chat)} · L${chat.level} ${level(chat.level).name}`}
+      onSend={send}
+    >
+      {msgs === null ? (
+        <p className="pt-10 text-center text-muted">불러오는 중…</p>
+      ) : msgs.length === 0 ? (
+        <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
+          서로를 선택해서 열린 방이에요.
+          <br />
+          먼저 말을 걸어보세요 🧗
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {msgs.map((m) => (
+            <Bubble key={m.id} m={m} />
+          ))}
+          <div ref={bottom} />
+        </div>
+      )}
+    </ChatFrame>
+  );
+}
+
+function SessionThread({
+  room,
+  onBack,
+}: {
+  room: SessionChat;
+  onBack: () => void;
+}) {
+  const [msgs, setMsgs] = useState<SessionChatMessage[] | null>(null);
+  const [photos, setPhotos] = useState<Record<string, string>>({});
+  const bottom = useRef<HTMLDivElement>(null);
+
+  const load = useCallback(async () => {
+    const list = await fetchSessionChatMessages(room.session_id);
+    setMsgs(list);
+    await markSessionChatRead(room.session_id);
+    if (list?.length) {
+      const paths = [
+        ...new Set(list.map((m) => m.sender_photo).filter(Boolean) as string[]),
+      ];
+      if (paths.length) setPhotos(await signedPhotoUrls(paths));
+    }
+  }, [room.session_id]);
+
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 5_000);
+    return () => clearInterval(t);
+  }, [load]);
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: "end" });
+  }, [msgs?.length]);
+
+  const send = async (body: string) => {
+    const r = await sendSessionChat(room.session_id, body);
+    if (r.error) return alert(`전송 실패: ${r.error}`);
+    load();
+  };
+
+  return (
+    <ChatFrame
+      onBack={onBack}
+      title={room.gym}
+      sub={`${sessionSub(room)} · ${room.members}명`}
+      onSend={send}
+    >
+      {msgs === null ? (
+        <p className="pt-10 text-center text-muted">불러오는 중…</p>
+      ) : msgs.length === 0 ? (
+        <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
+          정원이 다 차서 열린 방이에요.
+          <br />
+          만날 시간과 장소를 여기서 맞춰보세요 🧗
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          {msgs.map((m) => (
+            <Bubble
+              key={m.id}
+              m={m}
+              name={m.sender_name ?? "탈퇴한 사용자"}
+              photoUrl={m.sender_photo ? photos[m.sender_photo] : undefined}
+              isHost={m.sender_is_host}
+            />
+          ))}
+          <div ref={bottom} />
+        </div>
+      )}
+    </ChatFrame>
   );
 }

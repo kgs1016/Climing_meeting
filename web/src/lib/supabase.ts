@@ -191,7 +191,8 @@ export async function joinSession(id: string) {
   if (!sb) return { error: "no_client" };
   const { data, error } = await sb.rpc("session_join", { p_session: id });
   if (error) return { error: error.message };
-  return data as { status?: string; error?: string };
+  // chat_opened — 내 신청으로 정원이 차서 모임 채팅방이 막 열렸다
+  return data as { status?: string; chat_opened?: boolean; error?: string };
 }
 
 export async function fetchMySignups() {
@@ -718,6 +719,63 @@ export async function markChatRead(matchId: string) {
   const sb = getSupabase();
   if (!sb) return;
   await sb.rpc("chat_mark_read", { p_match: matchId });
+}
+
+/* ── 모임 단체 채팅 ──
+   1:1 과 달리 모임 자체가 방이라 match_id 가 아니라 session_id 로 다룬다. */
+
+export interface SessionChat {
+  session_id: string;
+  gym: string;
+  starts_at: string;
+  capacity: 1 | 2;
+  members: number;
+  last_body: string | null;
+  last_at: string;
+  unread: number;
+}
+
+export interface SessionChatMessage extends ChatMessage {
+  sender_name: string | null;
+  sender_photo: string | null;
+  sender_is_host: boolean;
+}
+
+export async function fetchSessionChats() {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_session_chats");
+  if (error) return null;
+  return data as SessionChat[];
+}
+
+export async function fetchSessionChatMessages(sessionId: string) {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("session_chat_messages", {
+    p_session: sessionId,
+  });
+  if (error) return null;
+  const d = data as SessionChatMessage[] | { error: string };
+  if (!Array.isArray(d)) return null;
+  return d;
+}
+
+export async function sendSessionChat(sessionId: string, body: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_chat_send", {
+    p_session: sessionId,
+    p_body: body,
+  });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export async function markSessionChatRead(sessionId: string) {
+  const sb = getSupabase();
+  if (!sb) return;
+  await sb.rpc("session_chat_mark_read", { p_session: sessionId });
 }
 
 /* ── 프로필 목록 ── */

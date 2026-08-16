@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryId } from "@/lib/queryId";
 import { careerLabel, level } from "@/lib/levels";
 import { DEMO_ID, buildDemoRoom, demoMatches } from "@/lib/roomDemo";
 import {
@@ -38,10 +39,11 @@ const ERRORS: Record<string, string> = {
   not_confirmed: "확정된 참가자만 볼 수 있어요",
 };
 
-export default function Room({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function Room() {
+  const qid = useQueryId();
+  const id = qid ?? "";
   const router = useRouter();
-  // /room/demo — 혼자서 화면을 확인하기 위한 경로. DB를 타지 않는다.
+  // /room?id=demo — 혼자서 화면을 확인하기 위한 경로. DB를 타지 않는다.
   const isDemo = id === DEMO_ID;
 
   const [room, setRoom] = useState<Room | null>(null);
@@ -54,10 +56,12 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
+    if (qid === undefined) return; // 주소를 아직 안 읽었다
     if (isDemo) {
       setRoom(buildDemoRoom());
       return;
     }
+    if (!id) return setErr("not_found");
     const r = await fetchRoom(id);
     if (r.error) return setErr(r.error);
     const room = r.room!;
@@ -66,7 +70,7 @@ export default function Room({ params }: { params: Promise<{ id: string }> }) {
       await signedPhotoUrls(room.people.map((p) => p.photo).filter(Boolean) as string[])
     );
     if (room.selection_open) setMatches(await fetchMatches(id));
-  }, [id, isDemo]);
+  }, [id, qid, isDemo]);
 
   useEffect(() => {
     load();

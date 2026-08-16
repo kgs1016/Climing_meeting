@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryId } from "@/lib/queryId";
 import { careerLabel, level } from "@/lib/levels";
 import { MOCK_PEOPLE, MOCK_SESSIONS } from "@/lib/mock";
 import {
@@ -49,19 +50,23 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export default function SessionHost({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function SessionHost() {
+  const qid = useQueryId();
+  const id = qid ?? "";
   const router = useRouter();
   const [host, setHost] = useState<HostProfile | null | undefined>(undefined);
   const [photo, setPhoto] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
+    // qid 는 첫 렌더에 undefined (주소를 아직 안 읽음)
+    if (qid === undefined) return;
     (async () => {
+      if (!id) {
+        setErr("not_found");
+        setHost(null);
+        return;
+      }
       if (!hasSupabase()) {
         setHost(mockHost(id));
         return;
@@ -77,7 +82,7 @@ export default function SessionHost({
         setPhoto((await signedPhotoUrls([r.host.photo]))[r.host.photo] ?? null);
       }
     })();
-  }, [id]);
+  }, [id, qid]);
 
   if (host === undefined)
     return <main className="px-4 pt-20 text-center text-muted">불러오는 중…</main>;
@@ -165,7 +170,7 @@ export default function SessionHost({
       </p>
 
       <Link
-        href={`/session/${id}`}
+        href={`/session?id=${id}`}
         className="mt-6 block rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-muted"
       >
         모임 정보로 돌아가기

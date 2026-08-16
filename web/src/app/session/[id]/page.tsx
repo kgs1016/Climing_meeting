@@ -8,12 +8,15 @@ import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
 import {
   hasSupabase,
+  acceptConfirm,
   currentUser,
   fetchSessions,
   fetchMyProfileDb,
   joinSession,
+  proposeConfirm,
   signedPhotoUrls,
   toSession,
+  withdrawConfirm,
 } from "@/lib/supabase";
 
 type S = Session & { myStatus?: string | null };
@@ -59,6 +62,54 @@ export default function SessionDetail({
   const left = slotsLeft(s);
   const full = left.male <= 0 && left.female <= 0;
   const joined = s.myStatus === "confirmed" || s.myStatus === "waiting";
+
+  /* 조기 확정 — 2:2 로 열었지만 남녀 수가 맞으면 그 인원으로 확정한다.
+     성비가 맞고(남 = 여), 한 명 이상이고, 아직 꽉 차지 않았을 때만. */
+  const matched = Math.min(s.maleJoined, s.femaleJoined);
+  const canEarlyConfirm =
+    s.maleJoined === s.femaleJoined && matched >= 1 && !full;
+  const proposed = !!s.earlyConfirmAt;
+  const iAmGuest = s.myStatus === "confirmed" && !s.iAmHost;
+
+  const ERRORS: Record<string, string> = {
+    not_host: "호스트만 확정할 수 있어요",
+    not_open: "이미 확정된 모임이에요",
+    not_balanced: "남녀 수가 맞아야 확정할 수 있어요",
+    already_full: "이미 정원이 다 찼어요",
+    no_proposal: "호스트가 확정 제안을 거뒀어요",
+    not_member: "확정된 참가자만 할 수 있어요",
+  };
+
+  const propose = async () => {
+    setBusy(true);
+    const r = await proposeConfirm(s.id);
+    setBusy(false);
+    if (r.error) return alert(ERRORS[r.error] ?? `실패: ${r.error}`);
+    alert(
+      `${matched}:${matched}로 확정하자고 보냈어요.\n상대가 받으면 모임이 완성되고 채팅방이 열려요.`
+    );
+    load();
+  };
+
+  const withdraw = async () => {
+    setBusy(true);
+    await withdrawConfirm(s.id);
+    setBusy(false);
+    load();
+  };
+
+  const accept = async () => {
+    setBusy(true);
+    const r = await acceptConfirm(s.id);
+    setBusy(false);
+    if (r.error) return alert(ERRORS[r.error] ?? `실패: ${r.error}`);
+    alert(
+      r.confirmed
+        ? `모임이 확정됐어요! 🎉\n${r.capacity}:${r.capacity}로 진행하고, 모임 채팅방이 열렸어요.`
+        : "받았어요. 남은 참가자를 기다리고 있어요."
+    );
+    load();
+  };
 
   const badges = [
     ...Array.from({ length: s.maleJoined }, (_, i) => ({ g: "m", key: `m${i}` })),
@@ -178,6 +229,81 @@ export default function SessionDetail({
         </p>
       </section>
 
+      {/* 조기 확정 — 자리가 남아도 성비가 맞으면 그 인원으로 갈 수 있다 */}
+      {s.iAmHost && canEarlyConfirm && !proposed && (
+        <section className="mt-4 rounded-2xl border border-mint/40 bg-mint/10 p-5">
+          <p className="text-[14.5px] font-extrabold">
+            {matched}:{matched}로 확정할까요?
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            지금 남녀 수가 맞아요. 자리를 더 기다리지 않고 이 인원으로 모임을
+            열 수 있어요. <b className="text-ink">참가자가 받으면</b> 확정되고
+            모임 채팅방이 열려요.
+          </p>
+          <button
+            onClick={propose}
+            disabled={busy}
+            className="mt-3 w-full rounded-xl bg-mint py-3 text-[14px] font-bold text-white disabled:opacity-50"
+          >
+            {busy ? "보내는 중…" : `🤝 ${matched}:${matched}로 모임 확정하기`}
+          </button>
+        </section>
+      )}
+
+      {s.iAmHost && proposed && (
+        <section className="mt-4 rounded-2xl border border-line bg-surface p-5">
+          <p className="text-[14.5px] font-extrabold">
+            참가자의 답을 기다리는 중…
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            {matched}:{matched}로 확정하자고 보냈어요. 받으면 바로 모임이
+            완성돼요.
+          </p>
+          <button
+            onClick={withdraw}
+            disabled={busy}
+            className="mt-3 w-full rounded-xl border border-line py-3 text-[13.5px] font-bold text-muted disabled:opacity-50"
+          >
+            제안 거두기
+          </button>
+        </section>
+      )}
+
+      {iAmGuest && proposed && !s.myAck && (
+        <section className="mt-4 rounded-2xl border border-mint/40 bg-mint/10 p-5">
+          <p className="text-[14.5px] font-extrabold">
+            호스트가 {matched}:{matched}로 하자고 해요
+          </p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            {s.capacity}:{s.capacity}로 열린 모임인데, 자리를 더 기다리지 않고
+            지금 인원으로 진행하자는 제안이에요.{" "}
+            <b className="text-ink">받으면 바로 확정</b>되고 모임 채팅방이 열려요.
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={withdraw}
+              disabled={busy}
+              className="flex-1 rounded-xl border border-line py-3 text-[13.5px] font-bold text-muted disabled:opacity-50"
+            >
+              더 기다릴래요
+            </button>
+            <button
+              onClick={accept}
+              disabled={busy}
+              className="flex-1 rounded-xl bg-mint py-3 text-[13.5px] font-bold text-white disabled:opacity-50"
+            >
+              {busy ? "처리 중…" : "좋아요, 확정할게요"}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {iAmGuest && proposed && s.myAck && (
+        <p className="mt-4 rounded-2xl border border-line bg-surface px-5 py-4 text-center text-[12.5px] leading-relaxed text-muted">
+          확정에 동의했어요. 남은 참가자의 답을 기다리는 중이에요.
+        </p>
+      )}
+
       {/* 호스트 — 눌러서 프로필 전체 보기 */}
       {s.host && (
         <section className="mt-4">
@@ -270,9 +396,11 @@ export default function SessionDetail({
         onClick={onJoin}
       >
         {joined
-          ? s.myStatus === "confirmed"
-            ? "✓ 확정됐어요"
-            : "대기 중 · 자리가 나면 자동 확정"
+          ? s.iAmHost
+            ? "내가 연 모임이에요"
+            : s.myStatus === "confirmed"
+              ? "✓ 확정됐어요"
+              : "대기 중 · 자리가 나면 자동 확정"
           : busy
             ? "신청 중…"
             : full

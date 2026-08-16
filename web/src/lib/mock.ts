@@ -27,6 +27,11 @@ export interface Session {
   /* 모임을 연 사람. 참가자와 달리 확정 전에도 공개한다.
      개설자가 탈퇴하면 host_id 가 null 이 되므로 없을 수 있다. */
   host?: SessionHost;
+  /* 조기 확정 — 2:2 로 열었지만 남녀 수가 맞으면 그 인원으로 확정하자는 제안.
+     호스트가 걸고 게스트가 받는다. */
+  iAmHost?: boolean;
+  earlyConfirmAt?: string | null;
+  myAck?: boolean;
 }
 
 export interface SessionHost {

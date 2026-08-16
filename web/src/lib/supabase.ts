@@ -69,6 +69,10 @@ export interface DbSession {
   host_age: number | null;
   host_area: string | null;
   host_level: LevelId | null;
+  // 조기 확정 — 2:2 로 열었지만 성비가 맞는 인원으로 확정하자는 제안
+  i_am_host: boolean;
+  early_confirm_at: string | null;
+  my_ack: boolean;
 }
 
 export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatus: string | null } {
@@ -95,6 +99,9 @@ export function toSession(r: DbSession, myHomeGym?: string): Session & { myStatu
     status: r.status === "open" ? "open" : "confirmed",
     isAway: myHomeGym ? r.gym !== myHomeGym : false,
     myStatus: r.my_status,
+    iAmHost: r.i_am_host,
+    earlyConfirmAt: r.early_confirm_at,
+    myAck: r.my_ack,
     host: r.host_nickname
       ? {
           id: r.host_id!,
@@ -193,6 +200,40 @@ export async function joinSession(id: string) {
   if (error) return { error: error.message };
   // chat_opened — 내 신청으로 정원이 차서 모임 채팅방이 막 열렸다
   return data as { status?: string; chat_opened?: boolean; error?: string };
+}
+
+/* ── 조기 확정 ──
+   2:2 로 열었는데 남 1 · 여 1 에서 멈춘 모임을, 그 인원으로 확정한다.
+   호스트가 걸고 게스트가 받아야 성립한다. */
+
+export async function proposeConfirm(id: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_propose_confirm", { p_session: id });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; matched?: number; error?: string };
+}
+
+export async function withdrawConfirm(id: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_withdraw_confirm", { p_session: id });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+export async function acceptConfirm(id: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_accept_confirm", { p_session: id });
+  if (error) return { error: error.message };
+  return data as {
+    ok?: boolean;
+    confirmed?: boolean;
+    capacity?: number;
+    waiting?: number;
+    error?: string;
+  };
 }
 
 export async function fetchMySignups() {

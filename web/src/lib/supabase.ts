@@ -827,17 +827,27 @@ export async function markSessionChatRead(sessionId: string) {
 
 /* ── 프로필 목록 ── */
 
-export async function fetchPeople() {
+/**
+ * 사람 찾기 목록.
+ * @param me 내 프로필 — 나 자신과 동성은 목록에서 뺀다. 관심은 이성에게만
+ *   보낼 수 있고(request_send 가 self · same_gender 로 막는다), 보낼 수 없는
+ *   카드를 늘어놓으면 누를 때까지 알 수 없다. 서버에서 걸러 아예 받지 않는다.
+ */
+export async function fetchPeople(me?: { id: string; gender: "m" | "f" }) {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data, error } = await sb
+  let q = sb
     .from("profiles")
     .select(
       "id, nickname, age, gender, level, career, height, home_gym, mbti, area, intro, photo"
     )
     .eq("is_public", true)
     // 사진 없는 카드는 목록에 넣지 않는다 (DB 제약과 이중으로)
-    .not("photo", "is", null)
+    .not("photo", "is", null);
+
+  if (me) q = q.neq("id", me.id).eq("gender", me.gender === "m" ? "f" : "m");
+
+  const { data, error } = await q
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) return null;

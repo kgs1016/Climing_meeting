@@ -90,7 +90,11 @@ export default function Home() {
         return;
       }
 
-      const [rows, ppl] = await Promise.all([fetchSessions(), fetchPeople()]);
+      // 사람 찾기는 이성만 — 내 성별을 알아야 걸러서 받을 수 있다
+      const [rows, ppl] = await Promise.all([
+        fetchSessions(),
+        fetchPeople(prof ? { id: user.id, gender: prof.gender } : undefined),
+      ]);
       if (prof) setMe(prof);
       if (rows) {
         setSessions(rows.map((r) => toSession(r, prof?.homeGym, user.id)));
@@ -120,6 +124,7 @@ export default function Home() {
 
   const REQ_ERRORS: Record<string, string> = {
     already: "이미 관심을 보낸 상대예요",
+    self: "나에게는 보낼 수 없어요",
     same_gender: "이성에게만 보낼 수 있어요",
     not_public: "상대가 프로필을 내렸어요",
     no_profile: "먼저 내 프로필을 만들어주세요",
@@ -433,6 +438,8 @@ export default function Home() {
             <br />
             관심 1회 = <b className="text-mint">{REQUEST_COST}크레딧</b>
             {credits && ` · 내 크레딧 ${credits.balance}`}
+            <br />
+            여기에는 <b className="text-ink">이성 프로필만</b> 보여요.
           </p>
 
           {people.map((p) => (

@@ -15,9 +15,11 @@ const nextConfig: NextConfig = {
   //    모른다). id 는 ?id= 로 받는다 — src/lib/queryId.ts 참고.
   output: "export",
 
-  // /session -> /session/index.html 로 떨어뜨린다. 네이티브 웹뷰의 파일
-  // 서버는 확장자 없는 경로를 index.html 로 찾아야 안정적으로 열린다.
-  trailingSlash: true,
+  // trailingSlash 는 켜지 않는다.
+  // 켜면 Vercel 이 .html 을 떼고 슬래시 붙은 주소로만 서빙해서
+  // /intro.html (홍보에 쓰는 랜딩 주소) 이 404 가 된다.
+  // 네이티브 웹뷰는 index.html 을 열고 이후 이동이 전부 클라이언트 라우팅이라
+  // 이 설정이 없어도 된다.
 };
 
 export default nextConfig;

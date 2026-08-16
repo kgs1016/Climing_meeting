@@ -14,6 +14,20 @@
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
+	<!-- 소셜 로그인이 끝나면 이 주소로 앱을 다시 부른다.
+	     capacitor.config.ts 의 appId 와 같아야 하고,
+	     Supabase 의 Redirect URLs 에도 등록돼 있어야 한다. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>kr.hobiday.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>kr.hobiday.app</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>

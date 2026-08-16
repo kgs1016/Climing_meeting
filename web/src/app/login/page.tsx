@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabase, enabledOAuthProviders } from "@/lib/supabase";
+import { signInWithProvider } from "@/lib/nativeAuth";
 
 const inputCls =
   // iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 — 16px 유지
@@ -49,11 +50,9 @@ export default function Login() {
   }
 
   const oauth = async (provider: Provider) => {
-    const { error } = await sb.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    });
-    if (error) alert(`${OAUTH[provider].label} 실패: ${error.message}`);
+    // 웹은 주소 이동, 앱은 시스템 브라우저 — 갈림은 nativeAuth 가 맡는다
+    const { error } = await signInWithProvider(provider);
+    if (error) alert(`${OAUTH[provider].label} 실패: ${error}`);
   };
 
   const submit = async (e: React.FormEvent) => {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">HOBIDAY</string>
+    <string name="title_activity_main">HOBIDAY</string>
+    <string name="package_name">kr.hobiday.app</string>
+    <string name="custom_url_scheme">kr.hobiday.app</string>
+</resources>

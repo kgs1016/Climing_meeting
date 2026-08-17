@@ -26,7 +26,7 @@ export default function SessionCard({
 
   return (
     <Link
-      href={`/session/${s.id}`}
+      href={`/session?id=${s.id}`}
       className="block rounded-2xl border border-line bg-surface p-4 active:scale-[0.99] transition-transform"
     >
       {/* 짐 · 시간 */}

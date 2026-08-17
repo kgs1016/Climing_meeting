@@ -5,6 +5,9 @@ import { ImageResponse } from "next/og";
 export const size = { width: 180, height: 180 };
 export const contentType = "image/png";
 
+// output: 'export' 에서는 빌드 때 한 번 만들어 파일로 떨군다
+export const dynamic = "force-static";
+
 export default function AppleIcon() {
   return new ImageResponse(
     (

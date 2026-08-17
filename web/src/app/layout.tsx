@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import BottomNav from "@/components/BottomNav";
+import NativeAuthBridge from "@/components/NativeAuthBridge";
 import RequireProfile from "@/components/RequireProfile";
 
 export const metadata: Metadata = {
@@ -38,6 +39,8 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full">
+        {/* 앱에서 소셜 로그인을 마치고 돌아오는 걸 받는다 (웹에서는 무동작) */}
+        <NativeAuthBridge />
         {/* 상단은 노치, 하단은 홈바 + 네비 높이만큼 비운다 */}
         <div
           className="mx-auto max-w-md min-h-dvh"

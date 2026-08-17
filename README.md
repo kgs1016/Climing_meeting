@@ -272,4 +272,4 @@ Tier 3 — 흥미로운 차이 (궁금 포인트)   "나: 근성형 vs 상대: �
 
 ### 미정 사항
 - MVP 기술 스택
-- 도메인·인스타 핸들·상표 확보 (hobiday.kr / @hobiday.official / 키프리스 43·45류 검색)
+- 도메인·인스타 핸들·상표 확보 (hobiday.com ✅ / @hobiday.official / 키프리스 43·45류 검색)

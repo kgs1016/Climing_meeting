@@ -489,7 +489,7 @@ export default function Inbox() {
                   return (
                     <Link
                       key={s.id}
-                      href={`/session/${s.id}`}
+                      href={`/session?id=${s.id}`}
                       className="block rounded-2xl border border-line bg-surface p-4"
                     >
                       <div className="flex items-start justify-between gap-2">

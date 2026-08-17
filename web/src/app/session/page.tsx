@@ -1,8 +1,9 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryId } from "@/lib/queryId";
 import { level, levelRangeLabel } from "@/lib/levels";
 import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
@@ -21,18 +22,15 @@ import {
 
 type S = Session & { myStatus?: string | null };
 
-export default function SessionDetail({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function SessionDetail() {
+  const id = useQueryId();
   const router = useRouter();
   const [s, setS] = useState<S | null | undefined>(undefined);
   const [hostPhoto, setHostPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = async () => {
+    if (!id) return setS(null);
     if (!hasSupabase()) {
       setS(MOCK_SESSIONS.find((x) => x.id === id) ?? null);
       return;
@@ -46,6 +44,8 @@ export default function SessionDetail({
   };
 
   useEffect(() => {
+    // id 는 첫 렌더에 undefined (주소를 아직 안 읽음) — 읽은 뒤에만 부른다
+    if (id === undefined) return;
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
@@ -307,7 +307,7 @@ export default function SessionDetail({
         <section className="mt-4">
           <h2 className="mb-2 text-[14px] font-bold">호스트 정보</h2>
           <Link
-            href={`/session/${s.id}/host`}
+            href={`/session/host?id=${s.id}`}
             className="flex items-center gap-3.5 rounded-2xl border border-line bg-surface p-4 active:scale-[0.99] transition-transform"
           >
             {hostPhoto ? (
@@ -374,7 +374,7 @@ export default function SessionDetail({
             </Link>
           )}
           <Link
-            href={`/room/${s.id}`}
+            href={`/room?id=${s.id}`}
             className="block rounded-xl border border-accent/50 bg-accent/10 py-3.5 text-center text-[14.5px] font-bold text-accent"
           >
             🧗 모임 진행 화면 열기

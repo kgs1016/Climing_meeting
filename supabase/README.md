@@ -87,6 +87,10 @@ npx supabase db push
 ```
 
 `web/.env.local` 은 샌드박스 키로 채운다 (git 에 안 올라가서 서로 안 섞인다).
+키는 대시보드 위쪽 **[Connect] > App Frameworks > Next.js** 에서 두 줄이
+값까지 채워진 채로 나온다. 수동으로 찾을 거면 **Settings > Data API** 의
+Project URL 과 **Settings > API Keys** 의 anon 을 각각 가져온다 — 예전
+`Settings > API` 한 페이지는 이 둘로 쪼개졌다.
 
 대시보드에서 두 가지만 더 만진다.
 

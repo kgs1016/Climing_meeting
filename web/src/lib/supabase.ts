@@ -8,10 +8,20 @@ import type { MyProfile } from "./myProfile";
 
 let _client: SupabaseClient | null | undefined;
 
+/* 대시보드 [Connect] 가 뱉는 이름은 PUBLISHABLE_KEY 로 바뀌었는데 예전
+   프로젝트는 아직 ANON_KEY 다. 이름만 다르고 쓰임은 같아서 둘 다 받는다.
+   NEXT_PUBLIC_ 은 빌드 때 문자열로 치환되므로 반드시 통째로 적어야 한다. */
+function anonKey() {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  );
+}
+
 export function getSupabase(): SupabaseClient | null {
   if (_client !== undefined) return _client;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = anonKey();
   _client = url && key ? createClient(url, key) : null;
   return _client;
 }
@@ -28,7 +38,7 @@ export async function currentUser(): Promise<User | null> {
 /** 대시보드에서 켜둔 소셜 로그인만 화면에 노출하기 위한 조회 */
 export async function enabledOAuthProviders(): Promise<string[]> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const key = anonKey();
   if (!url || !key) return [];
   try {
     const r = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { level } from "@/lib/levels";
 import ReportSheet from "@/components/ReportSheet";
+import { notifyPush } from "@/lib/nativePush";
 import {
   currentUser,
   fetchChatMessages,
@@ -481,6 +482,8 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   const send = async (body: string) => {
     const r = await sendChat(chat.match_id, body);
     if (r.error) return alert(`전송 실패: ${r.error}`);
+    // 실패해도 조용히 — 알림이 전송을 막으면 안 된다
+    notifyPush(chat.partner_id, "💬 새 메시지", body.slice(0, 80), "/chat");
     load();
   };
 

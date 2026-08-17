@@ -7,6 +7,7 @@ import ProfileTodo from "@/components/ProfileTodo";
 import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
+import { unregisterPush } from "@/lib/nativePush";
 import {
   CREDIT_LABELS,
   CREDIT_SESSION_VIDEO,
@@ -65,6 +66,9 @@ export default function Me() {
   }, []);
 
   const logout = async () => {
+    // 토큰을 먼저 지운다 — 로그아웃하면 세션이 없어 RPC 가 안 통한다.
+    // 안 지우면 이 폰에 알림이 계속 온다.
+    await unregisterPush();
     await getSupabase()?.auth.signOut();
     router.replace("/login");
   };
@@ -180,7 +184,8 @@ export default function Me() {
                 ))
               )}
               <p className="border-t border-line px-4 py-2.5 text-[11.5px] leading-relaxed text-muted">
-                관심 1회에 {REQUEST_COST}크레딧을 써요. 모임에서 등반 영상을
+                관심·모임 신청 1회에 {REQUEST_COST}크레딧을 써요. 거절되면 돌려드려요.
+                모임에서 등반 영상을
                 올리면 한 번에 {CREDIT_SESSION_VIDEO}크레딧이 쌓여요.
               </p>
             </section>

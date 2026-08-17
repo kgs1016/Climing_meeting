@@ -29,7 +29,7 @@ Port          465
 Username      resend
 Password      Resend API 키
 Sender email  no-reply@hobiday.com
-Sender name   하비데이
+Sender name   HobiDay
 ```
 
 Password 는 대시보드에 직접 입력한다. **레포에 넣지 않는다.**
@@ -39,7 +39,7 @@ Dashboard > **Authentication > Emails** 에서 이 폴더의 파일을 붙여넣
 
 | 파일 | 붙여넣을 곳 |
 |---|---|
-| `confirm-signup.html` | Confirm signup |
+| `confirm-signup.html` | Confirm signup — **인증번호(OTP) 방식** |
 | `reset-password.html` | Reset Password |
 | `change-email.html` | Change Email Address |
 
@@ -48,9 +48,10 @@ Magic Link · Invite 는 쓰지 않아 그대로 둔다.
 ### 5. 확인
 새 메일 주소로 가입해보고 —
 
-- 발신자가 **하비데이 &lt;no-reply@hobiday.com&gt;** 로 뜨는지
+- 발신자가 **HobiDay &lt;no-reply@hobiday.com&gt;** 로 뜨는지
 - **스팸함이 아니라 받은편지함**에 오는지 (지메일·네이버 각각)
-- 링크를 눌러 실제로 인증이 되는지
+- 가입: 메일의 6자리 인증번호를 화면에 입력해 가입이 완료되는지
+- 재설정·메일변경: 링크를 눌러 실제로 동작하는지
 
 ## 알아둘 것
 

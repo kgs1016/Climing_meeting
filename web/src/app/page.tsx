@@ -6,6 +6,7 @@ import { isProfileComplete } from "@/lib/profileGate";
 import SessionCard from "@/components/SessionCard";
 import ProfileTodo from "@/components/ProfileTodo";
 import ReportSheet from "@/components/ReportSheet";
+import { notifyPush } from "@/lib/nativePush";
 import { MOCK_SESSIONS, MOCK_PEOPLE, type Session, type Person } from "@/lib/mock";
 import { careerLabel, level } from "@/lib/levels";
 import { loadMyProfile, type MyProfile } from "@/lib/myProfile";
@@ -142,6 +143,12 @@ export default function Home() {
     }
     if (r.error) return alert(REQ_ERRORS[r.error] ?? `실패: ${r.error}`);
 
+    notifyPush(
+      reqTarget.id,
+      "💌 새 관심이 도착했어요",
+      reqMsg.trim() || "신청함에서 프로필을 확인해보세요",
+      "/inbox"
+    );
     setSentTo((s) => new Set(s).add(reqTarget.id));
     if (typeof r.balance === "number")
       setCredits((c) => (c ? { ...c, balance: r.balance! } : c));

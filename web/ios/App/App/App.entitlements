@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- 푸시 알림 (APNs). Apple Developer 에서 앱 ID 에 Push Notifications
+	     capability 를 켜야 이 값이 유효해진다. -->
+	<key>aps-environment</key>
+	<string>production</string>
+</dict>
+</plist>

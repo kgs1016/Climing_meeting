@@ -215,7 +215,13 @@ export async function joinSession(id: string) {
   const { data, error } = await sb.rpc("session_join", { p_session: id });
   if (error) return { error: error.message };
   // chat_opened — 내 신청으로 정원이 차서 모임 채팅방이 막 열렸다
-  return data as { status?: string; chat_opened?: boolean; error?: string };
+  return data as {
+    status?: string;
+    chat_opened?: boolean;
+    error?: string;
+    cost?: number;
+    balance?: number;
+  };
 }
 
 /* ── 조기 확정 ──
@@ -733,6 +739,7 @@ export const CREDIT_LABELS: Record<string, string> = {
    실제 적립·차감은 전부 서버가 하고, 여기 값은 안내 문구에만 쓴다.
    ⚠️ SQL 의 credit_rule 을 바꾸면 여기도 같이 바꿀 것. */
 export const REQUEST_COST = 10; // request_extra
+export const SESSION_JOIN_COST = 10; // session_join — 거절·확정 전 취소 시 반환
 export const CREDIT_SESSION_VIDEO = 2; // session_video (모임당 1회)
 
 export interface Credits {

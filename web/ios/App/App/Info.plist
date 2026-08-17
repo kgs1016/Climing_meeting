@@ -38,6 +38,14 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- 권한 문구 — 없으면 카메라를 여는 순간 앱이 죽고, 심사에서도 걸린다.
+	     "왜 필요한지" 가 구체적이어야 심사를 통과한다. -->
+	<key>NSCameraUsageDescription</key>
+	<string>프로필 사진을 찍기 위해 카메라를 사용해요.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>프로필 사진과 등반 영상을 올리기 위해 앨범에 접근해요.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>찍은 사진을 앨범에 저장하기 위해 필요해요.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

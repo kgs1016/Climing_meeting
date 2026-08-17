@@ -8,6 +8,7 @@ import { level, levelRangeLabel } from "@/lib/levels";
 import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
 import {
+  SESSION_JOIN_COST,
   hasSupabase,
   acceptConfirm,
   currentUser,
@@ -148,10 +149,25 @@ export default function SessionDetail() {
     setBusy(false);
     if (r.error === "is_host") return alert("내가 연 모임이에요!");
     if (r.error === "full") return alert("자리가 이미 다 찼어요.");
+    if (r.error === "no_credits")
+      return alert(
+        `크레딧이 부족해요.
+` +
+          `모임 신청 1회 = ${r.cost}크레딧 · 지금 ${r.balance}크레딧이에요.
+
+` +
+          `모임에서 등반 영상을 올리면 크레딧이 쌓여요.`
+      );
     if (r.error) return alert(`신청 실패: ${r.error}`);
     // 호스트 승인제 — 신청은 전부 대기로 들어간다
     alert(
-      "신청했어요! 호스트가 확인하면 알려드릴게요.\n신청함 → 보낸 신청에서 상태를 볼 수 있어요."
+      `신청했어요! 호스트가 확인하면 알려드릴게요.
+` +
+        (typeof r.cost === "number"
+          ? `크레딧 -${r.cost} (거절되면 돌려드려요)
+`
+          : "") +
+        "신청함 → 보낸 신청에서 상태를 볼 수 있어요."
     );
     load();
   };
@@ -410,7 +426,7 @@ export default function SessionDetail() {
               ? "신청 중…"
               : full
                 ? "자리가 다 찼어요"
-                : "참여 신청하기"}
+                : `참여 신청하기 · ${SESSION_JOIN_COST}크레딧`}
       </button>
     </main>
   );

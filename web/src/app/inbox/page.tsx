@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { careerLabel, level } from "@/lib/levels";
+import { notifyPush } from "@/lib/nativePush";
 import {
   hasSupabase,
   acceptConfirm,
@@ -142,12 +143,15 @@ export default function Inbox() {
 
   /* 관심 수락·거절 */
   const respond = async (id: string, accept: boolean) => {
+    const from = received.find((x) => x.id === id)?.from_id;
     setBusy(id);
     const r = await respondRequest(id, accept);
     setBusy(null);
     if (r.error) return alert(`실패: ${r.error}`);
     setReceived((l) => l.filter((x) => x.id !== id));
     if (r.accepted) {
+      if (from)
+        notifyPush(from, "🎉 관심이 수락됐어요", "채팅이 열렸어요. 먼저 인사해보세요!", "/chat");
       alert("수락했어요! 채팅으로 이동합니다.");
       router.push("/chat");
     }
@@ -161,6 +165,13 @@ export default function Inbox() {
       ? await approveSignup(h.session_id, h.user_id)
       : await rejectSignup(h.session_id, h.user_id);
     setBusy(null);
+    if (ok && !r.error)
+      notifyPush(
+        h.user_id,
+        "✅ 모임 신청이 수락됐어요",
+        `${h.gym} 모임에 자리가 잡혔어요`,
+        `/session?id=${h.session_id}`
+      );
     if (r.error) {
       const msg: Record<string, string> = {
         full: "그 성별 자리가 이미 다 찼어요",

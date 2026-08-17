@@ -63,3 +63,46 @@ npx supabase migration repair --status applied <버전>
 - 금액·정원 같은 값이 앱 코드에도 있으면 **양쪽을 함께 바꾼다.**
   한쪽만 바꾸면 화면 문구와 실제 동작이 어긋난다
   (예: `credit_rule()` ↔ `web/src/lib/supabase.ts` 의 `REQUEST_COST`)
+
+## 테스트용 프로젝트 (샌드박스)
+
+DB 가 하나뿐이면 브랜치에서 DB 변경을 확인할 데가 없다. Supabase 무료
+계정은 프로젝트를 2개까지 주므로, 실험용을 따로 하나 둔다.
+
+```
+브랜치 작업 중   샌드박스에 db push → 마음껏 실험 (깨져도 무관)
+검증 끝나면      main 병합 → 본 DB 는 여기서 적용
+```
+
+샌드박스는 빈 DB 라 마이그레이션 전체를 처음부터 돌리게 된다. 그래서
+"빈 DB 에서도 깨끗하게 올라가는지" 가 매번 검증된다 — 본 DB 에서는 영영
+확인 못 하는 부분이다.
+
+### 새 프로젝트 세우기
+
+```bash
+npx supabase login
+npx supabase link --project-ref <샌드박스_ref>   # 본 프로젝트 ref 아님!
+npx supabase db push
+```
+
+`web/.env.local` 은 샌드박스 키로 채운다 (git 에 안 올라가서 서로 안 섞인다).
+
+대시보드에서 두 가지만 더 만진다.
+
+- **Authentication > Providers > Email > Confirm email `off`**
+  — 테스트 계정을 여러 개 만들려면 인증 메일이 걸림돌이 된다
+- 오픈 잠금 해제 — 안 하면 대기 화면만 나온다
+
+  ```sql
+  update app_config set sessions_open = true, people_open = true;
+  ```
+
+### 본 DB 에는
+
+`20260801000000_base_schema` 는 이미 손으로 적용돼 있다. 다시 돌릴 필요가
+없으니 한 번만 표시해둔다.
+
+```bash
+npx supabase migration repair --status applied 20260801000000
+```

@@ -14,7 +14,8 @@
 workflows:
   android-debug:
     name: Android debug (unsigned)
-    instance_type: linux_x2
+    # 무료 플랜은 맥(M2)만 제공한다 — 안드로이드도 맥에서 문제없이 빌드된다
+    instance_type: mac_mini_m2
     max_build_duration: 30
     # 파일은 레포 루트에 있어야 Codemagic 이 찾는다. 앱은 web/ 에 있다.
     working_directory: web

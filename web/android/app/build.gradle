@@ -16,10 +16,24 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // Codemagic 이 코드 서명 설정(android_signing)에서 주입하는 값들.
+            // 로컬처럼 값이 없으면 서명 없이 넘어간다 — bundleRelease 는
+            // CI 에서만 서명되고, 로컬 디버그 빌드는 영향받지 않는다.
+            if (System.getenv("CM_KEYSTORE_PATH") != null) {
+                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 }

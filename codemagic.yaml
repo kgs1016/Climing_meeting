@@ -42,3 +42,61 @@ workflows:
       # 양쪽 다 걸어둔다. 중복 매칭은 무해하고, 안 걸리는 쪽만 무시된다.
       - web/android/app/build/outputs/**/*.apk
       - android/app/build/outputs/**/*.apk
+
+  # ── 일회용: 서명 키(키스토어) 생성 ──
+  # 로컬에 JDK 가 없어 빌드 머신에서 만든다. 한 번 돌리고 나면:
+  #   1. Artifacts 의 keystore-and-password.zip 다운로드
+  #   2. 압축 풀어 비밀번호 관리자에 백업 (⚠️ 이 키를 잃으면 앱 업데이트 불가)
+  #   3. Codemagic > Team/앱 설정 > Code signing identities > Android keystores
+  #      에 keystore 업로드 (비밀번호·alias 는 password.txt 내용)
+  #      Reference name: hobiday_upload
+  # 그 뒤로 이 워크플로는 다시 돌릴 일이 없다.
+  make-keystore:
+    name: Make upload keystore (run once)
+    instance_type: mac_mini_m2
+    max_build_duration: 10
+    environment:
+      java: 21
+    scripts:
+      - name: 키스토어 생성
+        script: |
+          PASS=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-20)
+          keytool -genkeypair -v             -keystore hobiday-upload.keystore             -alias hobiday             -keyalg RSA -keysize 2048 -validity 10000             -storepass "$PASS" -keypass "$PASS"             -dname "CN=HobiDay, O=Senipick, C=KR"
+          printf "keystore password: %s
+key alias: hobiday
+key password: %s
+" "$PASS" "$PASS" > password.txt
+          zip keystore-and-password.zip hobiday-upload.keystore password.txt
+    artifacts:
+      - keystore-and-password.zip
+
+  # ── 안드로이드 릴리스 (서명된 AAB — 플레이스토어 업로드용) ──
+  # 선행: make-keystore 로 만든 키가 Code signing identities 에
+  # hobiday_upload 로 등록돼 있어야 한다.
+  android-release:
+    name: Android release (signed AAB)
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    working_directory: web
+    environment:
+      android_signing:
+        - hobiday_upload
+      java: 21
+      node: 22
+      vars:
+        NEXT_PUBLIC_SUPABASE_URL: "https://loigwslmwvltdurjttpe.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_"
+    scripts:
+      - name: 의존성 설치
+        script: npm ci
+      - name: 웹 빌드 + 네이티브 반영
+        script: npm run sync
+      - name: 안드로이드 릴리스 빌드
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease
+    artifacts:
+      - web/android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/*.aab
+

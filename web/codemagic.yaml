@@ -1,0 +1,38 @@
+# Codemagic 빌드 설정 — 네이티브 앱을 클라우드에서 뽑는다.
+#
+# 윈도우에서는 iOS 를 빌드할 수 없어서(Xcode = macOS 전용) 클라우드를 쓴다.
+# 안드로이드도 같은 곳에서 뽑아 파이프라인을 하나로 유지한다.
+#
+# 워크플로는 단계적으로 늘린다 — 한 번에 다 걸면 어디서 깨졌는지 못 찾는다:
+#   1. android-debug   서명 없는 APK. 파이프라인이 뚫리는지 확인용   ← 지금
+#   2. android-release 서명 + AAB (플레이스토어용)                   ← 다음
+#   3. ios-release     서명 + IPA (앱스토어용)                       ← 그다음
+#
+# 모든 워크플로는 수동 시작이다 (triggering 없음 = 푸시해도 자동으로 안 돈다).
+# 무료 500분/월 — 빌드 1회 10~15분.
+
+workflows:
+  android-debug:
+    name: Android debug (unsigned)
+    instance_type: linux_x2
+    max_build_duration: 30
+    environment:
+      java: 21 # capacitor.build.gradle 의 VERSION_21 과 맞춘다
+      node: 22
+      vars:
+        # 앱에 박히는 공개 키 — anon key 는 어차피 모든 번들에 들어가는
+        # 공개값이라 여기 둬도 된다. 비밀키는 절대 여기 두지 않는다.
+        NEXT_PUBLIC_SUPABASE_URL: "https://loigwslmwvltdurjttpe.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_"
+    scripts:
+      - name: 의존성 설치
+        script: npm ci
+      - name: 웹 빌드 + 네이티브 반영 (BUILD_TARGET=native → 정적 내보내기)
+        script: npm run sync
+      - name: 안드로이드 빌드
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk

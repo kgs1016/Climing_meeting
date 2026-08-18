@@ -9,55 +9,64 @@
 [상대 앱]  관심·수락·메시지  →  Edge Function(push)
                                    ├─ can_notify() 관계 검사 (차단이면 거부)
                                    ├─ push_tokens 에서 기기 토큰 조회
-                                   └─ FCM → 아이폰(APNs 경유)·안드로이드
+                                   ├─ android → FCM (Firebase)
+                                   └─ ios     → APNs 직접 (Firebase 안 거침)
 ```
 
-iOS 도 FCM 하나로 보낸다 — Firebase 가 APNs 로 넘겨준다.
-그래서 Firebase 프로젝트가 하나 필요하다.
+iOS 는 Firebase 를 거치지 않는다 — 거치려면 iOS 앱에 Firebase SDK 와
+네이티브 초기화 코드를 심어야 해서, 서버가 애플(APNs)에 직접 보낸다.
+그래서 **Firebase 는 안드로이드용으로만** 쓴다.
 
-## 1. Firebase 프로젝트 만들기
+## 1. Firebase — 안드로이드만 (5분)
 
-[console.firebase.google.com](https://console.firebase.google.com) → 프로젝트 추가
-(이름: hobiday). Google 애널리틱스는 꺼도 된다.
+[console.firebase.google.com](https://console.firebase.google.com) → 프로젝트 (hobiday)
+→ ⚙️ 프로젝트 설정 → 일반 탭 → 내 앱 → 앱 추가 → **Android**
 
-## 2. 안드로이드 앱 등록
-
-프로젝트 설정 → 앱 추가 → Android
 - 패키지 이름: `kr.hobiday.app`
-- `google-services.json` 다운로드 → **`web/android/app/` 에 넣는다**
-- gradle 은 이미 준비돼 있다 (파일이 있으면 자동 적용)
+- `google-services.json` 다운로드 → **`web/android/app/` 에 넣는다** (커밋해도 됨)
+- 이후 SDK 안내는 전부 건너뛴다 (gradle 은 이미 준비돼 있다)
 
-## 3. iOS 앱 등록 + APNs 키 연결
+**iOS 앱은 Firebase 에 등록하지 않는다.** 이미 등록했어도 해는 없다 — 안 쓸 뿐.
 
-프로젝트 설정 → 앱 추가 → iOS
-- 번들 ID: `kr.hobiday.app`
-- `GoogleService-Info.plist` 다운로드 → **`web/ios/App/App/` 에 넣는다**
+## 2. 애플 APNs 키 (5분)
 
-APNs 키 (애플 계정에서):
-1. [developer.apple.com](https://developer.apple.com) → Certificates, IDs & Profiles
-   → **Keys** → + → 이름 `hobiday-push` → **Apple Push Notifications service (APNs)** 체크 → 등록
-2. `.p8` 파일 다운로드 — **한 번만 받을 수 있다. 잘 보관할 것.**
-   Key ID 도 적어둔다
-3. Identifiers → `kr.hobiday.app` (없으면 생성) → **Push Notifications** capability 켜기
-4. Firebase → 프로젝트 설정 → **클라우드 메시징** → Apple 앱 구성
-   → APNs 인증 키 업로드 (.p8 + Key ID + Team ID)
+[developer.apple.com](https://developer.apple.com) → Certificates, Identifiers & Profiles
 
-## 4. 서비스 계정 키를 Supabase 에 등록
+먼저 App ID:
+1. **Identifiers** → `kr.hobiday.app` 없으면 생성 (App IDs → App → Explicit)
+2. 열어서 **Push Notifications** capability 켜기 → Save
 
-발송 서버(Edge Function)가 FCM 을 부를 때 쓰는 비밀키다.
+그다음 키:
+3. **Keys** → + → 이름 `hobiday-push` → **APNs** 체크 → 등록
+4. `.p8` 파일 다운로드 — **한 번만 받을 수 있다. 잘 보관할 것**
+5. **Key ID** (10자리) 와 **Team ID** (Membership 페이지) 를 적어둔다
 
-1. Firebase → 프로젝트 설정 → **서비스 계정** → **새 비공개 키 생성** → JSON 다운로드
-2. 터미널에서 (JSON 경로만 바꿔서):
+## 3. 비밀키를 Supabase 에 등록 (3분)
+
+터미널에서 (경로·값만 실제 것으로):
 
 ```bash
-npx supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat 다운받은키.json)"
+# 안드로이드 발송용 — Firebase > 프로젝트 설정 > 서비스 계정 > 새 비공개 키
+npx supabase secrets set FIREBASE_SERVICE_ACCOUNT="$(cat 서비스계정.json)"
+
+# iOS 발송용
+npx supabase secrets set APNS_KEY="$(cat AuthKey_XXXXXXXXXX.p8)"
+npx supabase secrets set APNS_KEY_ID=XXXXXXXXXX
+npx supabase secrets set APPLE_TEAM_ID=XXXXXXXXXX
 ```
 
-⚠️ 이 JSON 은 **레포에 넣지 않는다.** google-services.json (안드로이드) 과
-GoogleService-Info.plist (iOS) 는 앱에 들어가는 공개 설정이라 커밋해도 되지만,
-서비스 계정 키는 발송 권한 그 자체다.
+⚠️ 서비스 계정 JSON 과 .p8 은 **레포에 넣지 않는다.** 발송 권한 그 자체다.
+등록 후 다운로드 폴더에서 지운다. (google-services.json 은 공개 설정이라 커밋 OK)
 
-## 5. 확인
+## 키 보관 현황 (2026-08-18 등록 완료)
+
+- 네 개 모두 Supabase secrets 에 들어가 있다 — **파일 원본이 없어도 발송은 돈다**
+- `.p8` 원본 + Key ID + Team ID: 비밀번호 관리자에 보관 (다른 서비스에 등록할 때만 필요)
+- 서비스 계정 JSON: 보관 안 함 — 필요하면 Firebase 에서 새로 발급
+- 잃어버렸을 때: .p8 은 애플에서 새 키 발급 → `supabase secrets set` 으로 교체.
+  JSON 도 마찬가지. 둘 다 10분 작업이라 애태울 일이 아니다
+
+## 4. 확인
 
 앱을 빌드해 두 대(또는 계정 2개)로:
 1. both 로그인 → 권한 허용 팝업에서 허용

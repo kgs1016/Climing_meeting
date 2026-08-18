@@ -9,6 +9,7 @@
  *  쓰는 법:  npm run sync
  */
 import { spawnSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 
 const env = { ...process.env, BUILD_TARGET: "native" };
 
@@ -17,4 +18,14 @@ const env = { ...process.env, BUILD_TARGET: "native" };
 for (const cmd of ["next build", "cap sync"]) {
   const r = spawnSync(cmd, { stdio: "inherit", env, shell: true });
   if (r.status !== 0) process.exit(r.status ?? 1);
+}
+
+// 윈도우에서 cap sync 가 iOS 패키지 경로를 역슬래시(\)로 쓴다 —
+// 그대로 커밋되면 맥(CI) 빌드가 깨진다. 매번 여기서 슬래시로 되돌린다.
+const pkg = "ios/App/CapApp-SPM/Package.swift";
+const before = readFileSync(pkg, "utf8");
+const after = before.replace(/path: "([^"]*)"/g, (_, p) => `path: "${p.replaceAll("\\", "/")}"`);
+if (after !== before) {
+  writeFileSync(pkg, after);
+  console.log("[sync] Package.swift 경로를 슬래시로 정정 (윈도우 cap sync 버그)");
 }

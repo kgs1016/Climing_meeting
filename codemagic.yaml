@@ -16,6 +16,8 @@ workflows:
     name: Android debug (unsigned)
     instance_type: linux_x2
     max_build_duration: 30
+    # 파일은 레포 루트에 있어야 Codemagic 이 찾는다. 앱은 web/ 에 있다.
+    working_directory: web
     environment:
       java: 21 # capacitor.build.gradle 의 VERSION_21 과 맞춘다
       node: 22
@@ -35,4 +37,5 @@ workflows:
           chmod +x gradlew
           ./gradlew assembleDebug
     artifacts:
-      - android/app/build/outputs/apk/debug/*.apk
+      # artifacts 경로는 working_directory 가 아니라 레포 루트 기준이다
+      - web/android/app/build/outputs/apk/debug/*.apk

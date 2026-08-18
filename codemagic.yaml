@@ -38,5 +38,7 @@ workflows:
           chmod +x gradlew
           ./gradlew assembleDebug
     artifacts:
-      # artifacts 경로는 working_directory 가 아니라 레포 루트 기준이다
-      - web/android/app/build/outputs/apk/debug/*.apk
+      # 경로 기준이 문서상 애매하다 (레포 루트 vs working_directory) —
+      # 양쪽 다 걸어둔다. 중복 매칭은 무해하고, 안 걸리는 쪽만 무시된다.
+      - web/android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/*.apk

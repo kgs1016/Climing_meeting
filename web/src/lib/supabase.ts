@@ -231,6 +231,30 @@ export async function joinSession(id: string) {
   };
 }
 
+/** 내가 만든 모임 전부 — 홈 목록과 달리 지난 것·취소한 것도 온다 */
+export interface MyHostedSession {
+  id: string;
+  gym: string;
+  starts_at: string;
+  ends_at: string;
+  capacity: number;
+  status: "open" | "confirmed" | "cancelled" | "done";
+  m_confirmed: number;
+  f_confirmed: number;
+  waiting: number;
+}
+
+export async function fetchMyHostedSessions(): Promise<MyHostedSession[] | null> {
+  const sb = getSupabase();
+  if (!sb) return null;
+  const { data, error } = await sb.rpc("my_hosted_sessions");
+  if (error) {
+    console.error("my_hosted_sessions", error);
+    return null;
+  }
+  return data as MyHostedSession[];
+}
+
 /** 호스트가 모임을 삭제(취소 표시)한다. 신청비는 서버가 전원 반환.
  *  notify = 알림 보낼 참가자 id 목록 (클라이언트가 push 를 부탁한다) */
 export async function deleteSession(id: string) {
@@ -633,6 +657,15 @@ export async function sendChat(matchId: string, body: string) {
     p_match: matchId,
     p_body: body,
   });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
+/** 1:1 방 나가기 — 방이 양쪽 모두에게서 사라진다 (대화 기록은 서버에 남는다) */
+export async function leaveChat(matchId: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("chat_leave", { p_match: matchId });
   if (error) return { error: error.message };
   return data as { ok?: boolean; error?: string };
 }

@@ -213,6 +213,13 @@ export default function Me() {
               <span className="text-muted">›</span>
             </Link>
             <Link
+              href="/session/mine"
+              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
+            >
+              내가 만든 모임
+              <span className="text-muted">›</span>
+            </Link>
+            <Link
               href="/safety"
               className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
             >

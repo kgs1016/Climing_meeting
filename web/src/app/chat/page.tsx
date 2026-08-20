@@ -9,9 +9,11 @@ import {
   currentUser,
   fetchChatMessages,
   fetchChats,
+  fetchRoom,
   fetchSessionChatMessages,
   fetchSessionChats,
   hasSupabase,
+  leaveChat,
   markChatRead,
   markSessionChatRead,
   sendChat,
@@ -19,6 +21,7 @@ import {
   signedPhotoUrls,
   type Chat,
   type ChatMessage,
+  type RoomPerson,
   type SessionChat,
   type SessionChatMessage,
 } from "@/lib/supabase";
@@ -463,7 +466,9 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    setMsgs(await fetchChatMessages(chat.match_id));
+    // 실패(상대가 나감 등)해도 보고 있던 대화를 지우지 않는다
+    const list = await fetchChatMessages(chat.match_id);
+    if (list) setMsgs(list);
     // 방을 보고 있는 동안 도착한 메시지도 읽음 처리한다
     await markChatRead(chat.match_id);
   }, [chat.match_id]);
@@ -481,10 +486,25 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
 
   const send = async (body: string) => {
     const r = await sendChat(chat.match_id, body);
-    if (r.error) return alert(`전송 실패: ${r.error}`);
+    if (r.error) {
+      if (r.error === "closed") return alert("상대가 대화방을 나갔어요.");
+      return alert(`전송 실패: ${r.error}`);
+    }
     // 실패해도 조용히 — 알림이 전송을 막으면 안 된다
     notifyPush(chat.partner_id, "💬 새 메시지", body.slice(0, 80), "/chat");
     load();
+  };
+
+  const leave = async () => {
+    if (
+      !confirm(
+        "이 대화방에서 나갈까요?\n방이 상대방에게서도 사라지고, 다시 열 수 없어요."
+      )
+    )
+      return;
+    const r = await leaveChat(chat.match_id);
+    if (r.error) return alert(`실패: ${r.error}`);
+    onBack();
   };
 
   return (
@@ -494,13 +514,22 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
         title={chat.nickname}
         sub={`${origin(chat)} · L${chat.level} ${level(chat.level).name}`}
         action={
-          <button
-            onClick={() => setReporting(true)}
-            aria-label="신고하기"
-            className="shrink-0 px-2 py-1 text-[12px] font-semibold text-muted/70"
-          >
-            신고
-          </button>
+          <div className="flex shrink-0 items-center">
+            <button
+              onClick={leave}
+              aria-label="대화방 나가기"
+              className="px-2 py-1 text-[12px] font-semibold text-muted/70"
+            >
+              나가기
+            </button>
+            <button
+              onClick={() => setReporting(true)}
+              aria-label="신고하기"
+              className="px-2 py-1 text-[12px] font-semibold text-muted/70"
+            >
+              신고
+            </button>
+          </div>
         }
         onSend={send}
       >
@@ -546,6 +575,10 @@ function SessionThread({
 }) {
   const [msgs, setMsgs] = useState<SessionChatMessage[] | null>(null);
   const [photos, setPhotos] = useState<Record<string, string>>({});
+  // 신고 — 단체방이라 누구를 신고할지 먼저 고른다
+  const [picking, setPicking] = useState(false);
+  const [members, setMembers] = useState<RoomPerson[] | null>(null);
+  const [target, setTarget] = useState<RoomPerson | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
@@ -576,11 +609,29 @@ function SessionThread({
     load();
   };
 
+  const openPicker = async () => {
+    setPicking(true);
+    if (members === null) {
+      const r = await fetchRoom(room.session_id);
+      setMembers(r.room ? r.room.people.filter((p) => !p.is_me) : []);
+    }
+  };
+
   return (
+    <>
     <ChatFrame
       onBack={onBack}
       title={room.gym}
       sub={`${sessionSub(room)} · ${room.members}명`}
+      action={
+        <button
+          onClick={openPicker}
+          aria-label="신고하기"
+          className="shrink-0 px-2 py-1 text-[12px] font-semibold text-muted/70"
+        >
+          신고
+        </button>
+      }
       onSend={send}
     >
       {msgs === null ? (
@@ -606,5 +657,65 @@ function SessionThread({
         </div>
       )}
     </ChatFrame>
+
+    {/* 누구를 신고할지 고르는 시트 */}
+    {picking && (
+      <div
+        className="fixed inset-0 z-50 flex items-end bg-black/60"
+        onClick={() => setPicking(false)}
+      >
+        <div
+          className="max-h-[70vh] w-full overflow-y-auto rounded-t-3xl border-t border-line bg-surface p-5"
+          style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <p className="text-[17px] font-extrabold">누구를 신고할까요?</p>
+          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+            신고하면 차단도 함께 되어, 이 모임과 채팅방이 내 화면에서 사라져요.
+          </p>
+          {members === null ? (
+            <p className="py-8 text-center text-[13px] text-muted">불러오는 중…</p>
+          ) : members.length === 0 ? (
+            <p className="py-8 text-center text-[13px] text-muted">
+              신고할 수 있는 참가자가 없어요
+            </p>
+          ) : (
+            <div className="mt-4 flex flex-col gap-1.5">
+              {members.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setPicking(false);
+                    setTarget(p);
+                  }}
+                  className="rounded-xl border border-line bg-bg px-4 py-3 text-left text-[14px] font-bold"
+                >
+                  {p.nickname}
+                </button>
+              ))}
+            </div>
+          )}
+          <button
+            onClick={() => setPicking(false)}
+            className="mt-4 w-full rounded-xl border border-line py-3.5 text-[14px] font-bold"
+          >
+            취소
+          </button>
+        </div>
+      </div>
+    )}
+
+    {target && (
+      <ReportSheet
+        targetId={target.id}
+        nickname={target.nickname}
+        context="session"
+        refId={room.session_id}
+        onClose={() => setTarget(null)}
+        // 신고=차단 → 서버가 이 방을 닫는다. 목록으로 돌려보낸다.
+        onDone={onBack}
+      />
+    )}
+    </>
   );
 }

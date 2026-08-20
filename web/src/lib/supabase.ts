@@ -31,21 +31,28 @@ export const hasSupabase = () => getSupabase() !== null;
 export async function currentUser(): Promise<User | null> {
   const sb = getSupabase();
   if (!sb) return null;
-  const { data } = await sb.auth.getUser();
-  return data.user ?? null;
+  // getUser() 는 부를 때마다 서버에 왕복한다 — 거의 모든 화면이 데이터를
+  // 받기 전에 이걸 기다려서, 폰(LTE)에서 화면 전환이 눈에 띄게 느렸다.
+  // getSession() 은 기기에 저장된 세션을 읽는다(왕복 없음). 진짜 검증은
+  // 어차피 모든 데이터 요청에서 RLS 가 토큰으로 한다.
+  const { data } = await sb.auth.getSession();
+  return data.session?.user ?? null;
 }
 
 /** 대시보드에서 켜둔 소셜 로그인만 화면에 노출하기 위한 조회 */
+let _providers: string[] | null = null; // 로그인 화면 올 때마다 다시 안 묻게
 export async function enabledOAuthProviders(): Promise<string[]> {
+  if (_providers) return _providers;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = anonKey();
   if (!url || !key) return [];
   try {
     const r = await fetch(`${url}/auth/v1/settings`, { headers: { apikey: key } });
     const j = await r.json();
-    return Object.entries(j.external ?? {})
+    _providers = Object.entries(j.external ?? {})
       .filter(([k, v]) => v === true && k !== "email" && k !== "phone")
       .map(([k]) => k);
+    return _providers;
   } catch {
     return [];
   }

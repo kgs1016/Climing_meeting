@@ -41,4 +41,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         config.delegateClass = SceneDelegate.self
         return config
     }
+
+    // 푸시 토큰 전달 — 애플이 준 토큰을 Capacitor 푸시 플러그인에 넘긴다.
+    // 이 두 메서드가 없으면 토큰이 와도 아무도 받지 않아, 권한 팝업은 뜨는데
+    // push_tokens 에 아무것도 저장되지 않는 조용한 실패가 된다.
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+    }
+
+    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+    }
 }

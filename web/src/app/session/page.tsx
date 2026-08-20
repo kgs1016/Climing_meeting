@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQueryId } from "@/lib/queryId";
+import { notifyPush } from "@/lib/nativePush";
 import { level, levelRangeLabel } from "@/lib/levels";
 import { isProfileComplete } from "@/lib/profileGate";
 import { MOCK_SESSIONS, slotsLeft, type Session } from "@/lib/mock";
@@ -11,7 +12,9 @@ import {
   SESSION_JOIN_COST,
   hasSupabase,
   acceptConfirm,
+  cancelSignup,
   currentUser,
+  deleteSession,
   fetchSessions,
   fetchMyProfileDb,
   joinSession,
@@ -104,6 +107,15 @@ export default function SessionDetail() {
     const r = await acceptConfirm(s.id);
     setBusy(false);
     if (r.error) return alert(ERRORS[r.error] ?? `실패: ${r.error}`);
+    if (s.host?.id)
+      notifyPush(
+        s.host.id,
+        r.confirmed ? "🎉 모임이 확정됐어요" : "✅ 확정 제안을 수락했어요",
+        r.confirmed
+          ? `${s.gym} 모임이 확정되고 채팅방이 열렸어요`
+          : `${s.gym} 모임의 확정 제안을 수락한 사람이 있어요`,
+        r.confirmed ? "/chat#session" : `/session?id=${s.id}`
+      );
     alert(
       r.confirmed
         ? `모임이 확정됐어요! 🎉\n${r.capacity}:${r.capacity}로 진행하고, 모임 채팅방이 열렸어요.`
@@ -116,6 +128,44 @@ export default function SessionDetail() {
     ...Array.from({ length: s.maleJoined }, (_, i) => ({ g: "m", key: `m${i}` })),
     ...Array.from({ length: s.femaleJoined }, (_, i) => ({ g: "f", key: `f${i}` })),
   ];
+
+  /* 호스트: 모임 삭제. 신청비는 서버가 전원 반환하고, 알림은 여기서 부탁한다 */
+  const onDelete = async () => {
+    if (
+      !confirm(
+        "모임을 삭제할까요?\n신청자들에게는 취소로 표시되고, 신청비는 전원 돌려드려요."
+      )
+    )
+      return;
+    setBusy(true);
+    const r = await deleteSession(s.id);
+    setBusy(false);
+    if (r.error === "not_host") return alert("호스트만 삭제할 수 있어요");
+    if (r.error) return alert(`삭제 실패: ${r.error}`);
+    if (r.notify?.length)
+      notifyPush(r.notify, "😢 모임이 취소됐어요", `${s.gym} 모임이 취소됐어요. 신청 크레딧은 돌려드렸어요.`, "/inbox");
+    alert("모임을 삭제했어요. 신청비는 전원 돌려드렸어요.");
+    router.push("/");
+  };
+
+  /* 참가자: 모임에서 빠지기. 대기 중엔 반환, 확정 후엔 반환 없음 */
+  const onLeave = async () => {
+    const waiting = s.myStatus !== "confirmed";
+    if (
+      !confirm(
+        waiting
+          ? "신청을 취소할까요? 신청비는 돌려드려요."
+          : "모임에서 나갈까요?\n확정된 자리를 비우는 거라 신청비는 돌려드리지 않아요."
+      )
+    )
+      return;
+    setBusy(true);
+    const r = await cancelSignup(s.id);
+    setBusy(false);
+    if (r.error) return alert(`실패: ${r.error}`);
+    alert(waiting ? "신청을 취소했어요. 신청비는 돌려드렸어요." : "모임에서 나왔어요.");
+    load();
+  };
 
   const onJoin = async () => {
     if (!hasSupabase()) {
@@ -159,6 +209,10 @@ export default function SessionDetail() {
           `모임에서 등반 영상을 올리면 크레딧이 쌓여요.`
       );
     if (r.error) return alert(`신청 실패: ${r.error}`);
+    // 승인제의 핵심 알림 — 호스트가 신청이 온 걸 몰라서 승인이 늦으면
+    // 신청자는 하염없이 기다린다
+    if (s.host?.id)
+      notifyPush(s.host.id, "🙋 새 모임 신청", `${s.gym} 모임에 신청이 왔어요. 확인해주세요!`, "/inbox");
     // 호스트 승인제 — 신청은 전부 대기로 들어간다
     alert(
       `신청했어요! 호스트가 확인하면 알려드릴게요.
@@ -428,6 +482,26 @@ export default function SessionDetail() {
                 ? "자리가 다 찼어요"
                 : `참여 신청하기 · ${SESSION_JOIN_COST}크레딧`}
       </button>
+
+      {s.iAmHost ? (
+        <button
+          onClick={onDelete}
+          disabled={busy}
+          className="mb-8 -mt-4 w-full rounded-xl border border-danger py-3 text-[13.5px] font-bold text-danger disabled:opacity-50"
+        >
+          모임 삭제하기
+        </button>
+      ) : null}
+
+      {joined && !s.iAmHost && (
+        <button
+          onClick={onLeave}
+          disabled={busy}
+          className="mb-8 -mt-4 w-full py-2 text-[13px] font-semibold text-muted underline underline-offset-4 disabled:opacity-50"
+        >
+          {s.myStatus === "confirmed" ? "모임에서 나가기" : "신청 취소하기"}
+        </button>
+      )}
     </main>
   );
 }

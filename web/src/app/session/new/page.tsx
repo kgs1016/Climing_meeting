@@ -113,6 +113,9 @@ export default function NewSession() {
     }
     if (!date) return alert("날짜를 선택해주세요");
     if (endTime <= startTime) return alert("종료 시각이 시작보다 빨라요");
+    // 서버도 막지만(과거 30분·90일 초과 거부) 여기서 먼저 알려주는 게 친절하다
+    if (new Date(`${date}T${startTime}:00`) < new Date(Date.now() - 30 * 60 * 1000))
+      return alert("이미 지난 시각이에요. 날짜를 확인해주세요");
 
     setBusy(true);
     const user = await currentUser();
@@ -149,6 +152,8 @@ export default function NewSession() {
     });
     setBusy(false);
 
+    if (r.error === "past") return alert("이미 지난 시각이에요. 날짜를 확인해주세요");
+    if (r.error === "too_far") return alert("모임은 90일 안쪽으로만 열 수 있어요");
     if (r.error) return alert(`등록 실패: ${r.error}`);
     alert("모임을 열었어요! 성비가 맞으면 확정돼요.");
     router.push("/");

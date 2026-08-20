@@ -231,6 +231,25 @@ export async function joinSession(id: string) {
   };
 }
 
+/** 호스트가 모임을 삭제(취소 표시)한다. 신청비는 서버가 전원 반환.
+ *  notify = 알림 보낼 참가자 id 목록 (클라이언트가 push 를 부탁한다) */
+export async function deleteSession(id: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_delete", { p_session: id });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; notify?: string[]; error?: string };
+}
+
+/** 참가자가 모임에서 빠진다. 대기 중이면 신청비 반환, 확정 후엔 반환 없음. */
+export async function cancelSignup(id: string) {
+  const sb = getSupabase();
+  if (!sb) return { error: "no_client" };
+  const { data, error } = await sb.rpc("session_cancel", { p_session: id });
+  if (error) return { error: error.message };
+  return data as { ok?: boolean; error?: string };
+}
+
 /* ── 조기 확정 ──
    2:2 로 열었는데 남 1 · 여 1 에서 멈춘 모임을, 그 인원으로 확정한다.
    호스트가 걸고 게스트가 받아야 성립한다. */

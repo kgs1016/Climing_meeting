@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { CAREERS, LEVELS, type CareerId, type LevelId } from "@/lib/levels";
 import { loadMyProfile, saveMyProfile, type MyProfile } from "@/lib/myProfile";
 import { isProfileComplete } from "@/lib/profileGate";
-import { isNativeApp, pickPhotoNative } from "@/lib/nativeCamera";
 import { downscaleImage } from "@/lib/imageResize";
 import {
   PHOTO_MAX_BYTES,
@@ -227,21 +226,11 @@ export default function ProfileNew() {
         {/* 대표 사진 — 사람 찾기의 첫인상이라 필수 */}
         <Field label="대표 사진">
           <div className="flex items-center gap-4">
-            <label
-              className="relative shrink-0 cursor-pointer"
-              onClick={(e) => {
-                // 네이티브 앱이면 OS 의 "찍기/앨범" UI 로. 웹이면 아래
-                // input 이 그대로 열린다.
-                // preventDefault 는 동기로 불러야 한다 — await 뒤에는
-                // 이미 파일창이 열린 뒤라 늦는다.
-                if (!isNativeApp()) return;
-                e.preventDefault();
-                if (photoBusy) return;
-                pickPhotoNative().then((f) => {
-                  if (f) pickPhoto(f); // null·undefined = 웹이거나 취소
-                });
-              }}
-            >
+            {/* 네이티브에서도 파일 선택창을 그대로 쓴다 — iOS 가
+                "사진 보관함/사진 찍기/파일 선택" 시트를 한국어로 띄워준다.
+                카메라 플러그인의 자체 선택창을 써봤더니 영어인 데다
+                보관함 버튼이 동작하지 않아 되돌렸다. */}
+            <label className="relative shrink-0 cursor-pointer">
               {photoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img

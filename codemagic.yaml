@@ -61,11 +61,10 @@ workflows:
       - name: 키스토어 생성
         script: |
           PASS=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-20)
-          keytool -genkeypair -v             -keystore hobiday-upload.keystore             -alias hobiday             -keyalg RSA -keysize 2048 -validity 10000             -storepass "$PASS" -keypass "$PASS"             -dname "CN=HobiDay, O=Senipick, C=KR"
-          printf "keystore password: %s
-key alias: hobiday
-key password: %s
-" "$PASS" "$PASS" > password.txt
+          keytool -genkeypair -v -keystore hobiday-upload.keystore -alias hobiday -keyalg RSA -keysize 2048 -validity 10000 -storepass "$PASS" -keypass "$PASS" -dname "CN=HobiDay, O=Senipick, C=KR"
+          echo "keystore password: $PASS" > password.txt
+          echo "key alias: hobiday" >> password.txt
+          echo "key password: $PASS" >> password.txt
           zip keystore-and-password.zip hobiday-upload.keystore password.txt
     artifacts:
       - keystore-and-password.zip

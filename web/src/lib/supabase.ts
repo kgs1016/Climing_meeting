@@ -784,14 +784,24 @@ export interface AppFlags {
   people_open: boolean;
   open_at: string | null;
   notice: string | null;
+  /** 내부 테스터 — 잠겨 있어도 서버가 열린 값을 내려준다 */
+  tester?: boolean;
 }
+
+/* 홈·게이트·하단 탭이 화면마다 읽는다 — 값은 거의 안 바뀌니 잠깐 재사용.
+   테스터 여부가 로그인에 따라 달라지므로 사용자별로 캐시한다. */
+let _flagsCache: { uid: string | null; flags: AppFlags; exp: number } | null = null;
 
 /** 로그인 없이도 읽힌다 (플래그·집계뿐) */
 export async function fetchAppFlags() {
   const sb = getSupabase();
   if (!sb) return null;
+  const uid = (await currentUser())?.id ?? null; // getSession — 서버 왕복 없음
+  if (_flagsCache && _flagsCache.exp > Date.now() && _flagsCache.uid === uid)
+    return _flagsCache.flags;
   const { data, error } = await sb.rpc("app_flags");
   if (error) return null;
+  _flagsCache = { uid, flags: data as AppFlags, exp: Date.now() + 5 * 60_000 };
   return data as AppFlags;
 }
 
@@ -810,6 +820,9 @@ export const CREDIT_LABELS: Record<string, string> = {
   profile_complete: "🧗 프로필 완성",
   early_bird: "🎁 사전 가입 혜택",
   request_extra: "💌 관심 보내기",
+  request_refund: "↩️ 관심 반환",
+  session_join: "🧗 모임 신청",
+  session_refund: "↩️ 모임 신청 반환",
   // 아래 둘은 로테이션 시절 적립. 지난 원장을 읽으려면 이름이 필요하다.
   mission_video: "🎥 영상 미션",
   mission_done: "✅ 미션 완료",

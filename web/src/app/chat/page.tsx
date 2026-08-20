@@ -537,7 +537,7 @@ function Thread({ chat, onBack }: { chat: Chat; onBack: () => void }) {
           <p className="pt-10 text-center text-muted">불러오는 중…</p>
         ) : msgs.length === 0 ? (
           <p className="px-6 pt-10 text-center text-[13px] leading-relaxed text-muted">
-            서로를 선택해서 열린 방이에요.
+            관심을 수락해서 열린 방이에요.
             <br />
             먼저 말을 걸어보세요 🧗
           </p>
@@ -582,8 +582,9 @@ function SessionThread({
   const bottom = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
+    // 실패(차단·모임 취소로 not_allowed 등)해도 보던 화면을 지우지 않는다
     const list = await fetchSessionChatMessages(room.session_id);
-    setMsgs(list);
+    if (list) setMsgs(list);
     await markSessionChatRead(room.session_id);
     if (list?.length) {
       const paths = [
@@ -606,6 +607,9 @@ function SessionThread({
   const send = async (body: string) => {
     const r = await sendSessionChat(room.session_id, body);
     if (r.error) return alert(`전송 실패: ${r.error}`);
+    // 시간·장소를 맞추는 방이라 알림이 없으면 반쪽이다. 실패해도 조용히.
+    if (r.notify?.length)
+      notifyPush(r.notify, `💬 ${room.gym}`, body.slice(0, 80), "/chat#session");
     load();
   };
 

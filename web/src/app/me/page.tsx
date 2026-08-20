@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ProfileTodo from "@/components/ProfileTodo";
+import { resetProfileGate } from "@/components/RequireProfile";
 import { careerLabel, level } from "@/lib/levels";
 import type { MyProfile } from "@/lib/myProfile";
 import { loadMyProfile } from "@/lib/myProfile";
@@ -16,6 +17,7 @@ import {
   hasSupabase,
   currentUser,
   deleteAccount,
+  fetchAppFlags,
   fetchCredits,
   fetchMyProfileDb,
   fetchMyVideos,
@@ -38,6 +40,7 @@ export default function Me() {
   const [leaving, setLeaving] = useState(false); // 탈퇴 확인 패널
   const [confirmText, setConfirmText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [locked, setLocked] = useState(false); // 오픈 전 잠금 (테스터는 false)
 
   useEffect(() => {
     (async () => {
@@ -54,11 +57,13 @@ export default function Me() {
       }
       setAuthed(true);
       setEmail(user.email ?? null);
-      const [prof, vids, cr] = await Promise.all([
+      const [prof, vids, cr, flags] = await Promise.all([
         fetchMyProfileDb(),
         fetchMyVideos(),
         fetchCredits(),
+        fetchAppFlags(),
       ]);
+      if (flags) setLocked(!flags.sessions_open && !flags.people_open);
       setProfile(prof);
       setVideoCount(vids?.length ?? 0);
       setCredits(cr);
@@ -74,6 +79,8 @@ export default function Me() {
     // 안 지우면 이 폰에 알림이 계속 온다.
     await unregisterPush();
     await getSupabase()?.auth.signOut();
+    // SPA 라 리로드가 없다 — 프로필 게이트 캐시를 지워야 다음 계정에 안 샌다
+    resetProfileGate();
     router.replace("/login");
   };
 
@@ -82,9 +89,10 @@ export default function Me() {
     const r = await deleteAccount();
     setBusy(false);
     if (r.error) {
-      alert(`탈퇴 처리에 실패했어요: ${r.error}\n잠시 후 다시 시도해주세요.`);
+      alert("탈퇴 처리에 실패했어요. 잠시 후 다시 시도해주세요.");
       return;
     }
+    resetProfileGate();
     alert("탈퇴가 완료됐어요. 그동안 함께해줘서 고마워요.");
     router.replace("/login");
   };
@@ -207,36 +215,28 @@ export default function Me() {
           <section className="mt-4 flex flex-col overflow-hidden rounded-2xl border border-line bg-surface">
             <Link
               href="/profile/new"
-              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
+              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold last:border-b-0"
             >
               프로필 수정
               <span className="text-muted">›</span>
             </Link>
-            <Link
-              href="/session/mine"
-              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
-            >
-              내가 만든 모임
-              <span className="text-muted">›</span>
-            </Link>
+            {/* 오픈 전 잠금 중엔 모임 화면이 닫혀 있어 눌러도 홈으로 튕긴다 — 숨긴다 */}
+            {!locked && (
+              <Link
+                href="/session/mine"
+                className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold last:border-b-0"
+              >
+                내가 만든 모임
+                <span className="text-muted">›</span>
+              </Link>
+            )}
             <Link
               href="/safety"
-              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold"
+              className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold last:border-b-0"
             >
               안전 설정 · 차단 목록
               <span className="text-muted">›</span>
             </Link>
-            {["취향 설문 (다음 단계)", "내 영상 보관함 (다음 단계)"].map(
-              (item) => (
-                <button
-                  key={item}
-                  className="flex items-center justify-between border-b border-line px-4 py-3.5 text-left text-[14px] font-semibold text-muted last:border-b-0"
-                >
-                  {item}
-                  <span>›</span>
-                </button>
-              )
-            )}
           </section>
 
           {authed && (

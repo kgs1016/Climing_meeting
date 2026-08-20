@@ -181,6 +181,17 @@ export default function Inbox() {
       return alert(msg[r.error] ?? `실패: ${r.error}`);
     }
     if (ok && "chat_opened" in r && r.chat_opened) {
+      // 방금 승인된 사람은 위에서 "수락됐어요" 를 받았고, 먼저 확정돼
+      // 있던 사람들은 방이 열린 걸 모른다 — 서버가 준 목록으로 알린다
+      // (r 은 승인/거절 반환의 합집합이라 notify 는 좁혀서 꺼낸다)
+      const notify = (r as { notify?: string[] }).notify;
+      if (notify?.length)
+        notifyPush(
+          notify,
+          "🎉 모임이 확정됐어요",
+          `${h.gym} 모임 정원이 다 찼어요. 채팅방이 열렸어요!`,
+          "/chat#session"
+        );
       alert("정원이 다 찼어요! 모임 채팅방이 열렸습니다 🎉");
     }
     load();
@@ -496,13 +507,21 @@ export default function Inbox() {
               <h2 className="mb-2 text-[14px] font-bold">🧗 신청한 모임</h2>
               <div className="flex flex-col gap-2">
                 {signups.map((s) => {
-                  const st = STATUS[s.my_status] ?? STATUS.waiting;
-                  return (
-                    <Link
-                      key={s.id}
-                      href={`/session?id=${s.id}`}
-                      className="block rounded-2xl border border-line bg-surface p-4"
-                    >
+                  // 호스트가 모임을 취소하면 상세 화면이 못 여는 상태가 된다 —
+                  // 링크 없이 취소 안내만 남긴다 (대기 중이었다면 신청비는 반환됨)
+                  const cancelled = s.session_status === "cancelled";
+                  const st = cancelled
+                    ? {
+                        label: "모임 취소됨",
+                        cls: "bg-surface2 text-muted",
+                        note:
+                          s.my_status === "confirmed"
+                            ? "호스트가 모임을 취소했어요. 신청 크레딧은 돌려드렸어요."
+                            : "호스트가 모임을 취소했어요. 대기 중이던 신청 크레딧은 돌려드렸어요.",
+                      }
+                    : (STATUS[s.my_status] ?? STATUS.waiting);
+                  const body = (
+                    <>
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
                           <p className="truncate text-[14.5px] font-extrabold">
@@ -521,6 +540,22 @@ export default function Inbox() {
                       {st.note && (
                         <p className="mt-2 text-[12.5px] text-muted">{st.note}</p>
                       )}
+                    </>
+                  );
+                  return cancelled ? (
+                    <div
+                      key={s.id}
+                      className="rounded-2xl border border-line bg-surface p-4 opacity-70"
+                    >
+                      {body}
+                    </div>
+                  ) : (
+                    <Link
+                      key={s.id}
+                      href={`/session?id=${s.id}`}
+                      className="block rounded-2xl border border-line bg-surface p-4"
+                    >
+                      {body}
                     </Link>
                   );
                 })}

@@ -89,6 +89,14 @@ export default function SessionDetail() {
     const r = await proposeConfirm(s.id);
     setBusy(false);
     if (r.error) return alert(ERRORS[r.error] ?? `실패: ${r.error}`);
+    // 받아야만 성사되는 제안이라, 도착을 모르면 병목이 된다
+    if (r.notify?.length)
+      notifyPush(
+        r.notify,
+        "🤝 모임 확정 제안",
+        `${s.gym} 모임을 지금 인원으로 확정하자는 제안이 왔어요`,
+        "/inbox"
+      );
     alert(
       `${matched}:${matched}로 확정하자고 보냈어요.\n상대가 받으면 모임이 완성되고 채팅방이 열려요.`
     );
@@ -107,15 +115,23 @@ export default function SessionDetail() {
     const r = await acceptConfirm(s.id);
     setBusy(false);
     if (r.error) return alert(ERRORS[r.error] ?? `실패: ${r.error}`);
-    if (s.host?.id)
+    if (r.confirmed) {
+      // 확정의 순간 — 호스트 포함, 나 빼고 전원에게 알린다 (서버가 목록을 준다)
+      if (r.notify?.length)
+        notifyPush(
+          r.notify,
+          "🎉 모임이 확정됐어요",
+          `${s.gym} 모임이 확정되고 채팅방이 열렸어요`,
+          "/chat#session"
+        );
+    } else if (s.host?.id) {
       notifyPush(
         s.host.id,
-        r.confirmed ? "🎉 모임이 확정됐어요" : "✅ 확정 제안을 수락했어요",
-        r.confirmed
-          ? `${s.gym} 모임이 확정되고 채팅방이 열렸어요`
-          : `${s.gym} 모임의 확정 제안을 수락한 사람이 있어요`,
-        r.confirmed ? "/chat#session" : `/session?id=${s.id}`
+        "✅ 확정 제안을 수락했어요",
+        `${s.gym} 모임의 확정 제안을 수락한 사람이 있어요`,
+        `/session?id=${s.id}`
       );
+    }
     alert(
       r.confirmed
         ? `모임이 확정됐어요! 🎉\n${r.capacity}:${r.capacity}로 진행하고, 모임 채팅방이 열렸어요.`

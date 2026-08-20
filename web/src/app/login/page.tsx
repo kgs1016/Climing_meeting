@@ -98,6 +98,12 @@ export default function Login() {
         >
           {busy ? "처리 중…" : "로그인"}
         </button>
+        <Link
+          href="/reset"
+          className="mt-1 text-center text-[12.5px] font-semibold text-muted underline underline-offset-4"
+        >
+          비밀번호를 잊으셨나요?
+        </Link>
       </form>
 
       {/* 애플 심사 1.2 — UGC 앱은 약관 동의가 가입 흐름에 보여야 한다.

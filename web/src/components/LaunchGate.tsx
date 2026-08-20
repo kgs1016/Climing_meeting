@@ -15,6 +15,7 @@ import { fetchAppFlags, hasSupabase } from "@/lib/supabase";
 const OPEN_PATHS = [
   "/login",
   "/signup",
+  "/reset",
   "/auth",
   "/profile/new",
   "/me",

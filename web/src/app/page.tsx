@@ -29,8 +29,6 @@ import {
   type Credits,
 } from "@/lib/supabase";
 
-const FILTERS = ["날짜", "짐", "레벨", "나이", "강도"];
-
 export default function Home() {
   // Supabase 키가 없을 때만 목데이터로 화면을 본다 (개발 폴백).
   // 실제 배포에선 목데이터를 초기값으로 두면 안 된다 — 확인이 끝나기 전에
@@ -71,7 +69,11 @@ export default function Home() {
 
       // 비로그인은 DB가 아무것도 안 내려준다. 목데이터가 실제 모임처럼
       // 보이는 걸 막으려고 조회 자체를 하지 않는다.
-      if (!user) return;
+      // 플래그만 읽는다(로그인 불필요) — 오픈 전 안내 카드에 쓴다.
+      if (!user) {
+        setFlags(await fetchAppFlags());
+        return;
+      }
 
       // 프로필(사진 포함)을 먼저 완성해야 둘러볼 수 있다.
       // 막는 건 RequireProfile 이 레이아웃에서 한다 — 여기서는 조회만 멈춘다.
@@ -217,8 +219,8 @@ export default function Home() {
               🎥 <b className="text-ink">등반 영상</b> — 서로 찍어주고 크레딧 적립
             </p>
             <p>
-              🤫 <b className="text-ink">비공개 선택</b> — 서로 고른 경우에만 채팅
-              개설
+              💬 <b className="text-ink">채팅</b> — 관심을 수락하면 1:1, 모임이
+              확정되면 참가자 단체방
             </p>
           </div>
         </section>
@@ -241,6 +243,15 @@ export default function Home() {
 
   // 비로그인 게이트 — authed 가 null 인 동안(확인 중)은 띄우지 않아 깜빡임이 없다
   if (authed === false) {
+    // 오픈 전(잠금)일 때만 사전 가입 안내를 띄운다. 날짜는 DB(open_at)가
+    // 유일한 출처다 — 하드코딩하면 날짜를 옮길 때마다 화면과 어긋난다.
+    const preOpen = flags && !flags.sessions_open && !flags.people_open;
+    const openDay = flags?.open_at
+      ? new Date(flags.open_at).toLocaleDateString("ko-KR", {
+          month: "long",
+          day: "numeric",
+        })
+      : null;
     return (
       <main className="px-4">
         <header className="pt-16 text-center">
@@ -269,15 +280,17 @@ export default function Home() {
           </Link>
         </div>
 
-        <section className="mx-auto mt-6 max-w-sm rounded-2xl border border-line bg-surface px-5 py-4 text-center">
-          <p className="text-[13px] font-bold text-mint">
-            8월 31일 오픈 · 지금은 사전 가입을 받고 있어요
-          </p>
-          <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
-            조금만 기다려 주세요. 오픈하면{" "}
-            <b className="text-ink">가입하신 이메일로</b> 알려드릴게요.
-          </p>
-        </section>
+        {preOpen && (
+          <section className="mx-auto mt-6 max-w-sm rounded-2xl border border-line bg-surface px-5 py-4 text-center">
+            <p className="text-[13px] font-bold text-mint">
+              {openDay ? `${openDay} 오픈 · ` : ""}지금은 사전 가입을 받고 있어요
+            </p>
+            <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted">
+              조금만 기다려 주세요. 오픈하면{" "}
+              <b className="text-ink">가입하신 이메일로</b> 알려드릴게요.
+            </p>
+          </section>
+        )}
 
         <p className="mt-6 text-center text-[11.5px] leading-relaxed text-muted">
           참여자 프로필을 보호하려고 로그인 후에만 공개해요.
@@ -342,19 +355,7 @@ export default function Home() {
 
       {tab === "session" ? (
         <>
-          {/* 필터 (목업 — 다음 단계에서 동작) */}
-          <div className="flex gap-1.5 overflow-x-auto py-3 [-ms-overflow-style:none] [scrollbar-width:none]">
-            {FILTERS.map((f) => (
-              <span
-                key={f}
-                className="shrink-0 rounded-full border border-line bg-surface px-3.5 py-1.5 text-[12.5px] font-semibold text-muted"
-              >
-                {f} ▾
-              </span>
-            ))}
-          </div>
-
-          <div className="flex flex-col gap-3 pb-6">
+          <div className="flex flex-col gap-3 pt-3 pb-6">
             {!live && hasSupabase() === false && (
               <p className="rounded-xl border border-dashed border-line px-4 py-2.5 text-center text-[11.5px] text-muted">
                 미리보기 데이터예요 · Supabase 연결 후 실제 모임이 표시됩니다

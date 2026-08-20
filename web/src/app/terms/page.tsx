@@ -62,8 +62,8 @@ export default function Terms() {
           <br />
           · <b className="text-ink">반환:</b> 모임 신청이 거절되거나, 확정 전에 본인이
           취소하거나, 모임 자체가 사라진 경우 신청분이 반환됩니다. 확정된 뒤 본인이
-          취소하면 반환되지 않습니다. 보낸 관심은 상대의 수락 여부와 무관하게 반환되지
-          않습니다.
+          취소하면 반환되지 않습니다. 보낸 관심은 상대가 거절하거나 7일간 응답이 없어
+          만료되면 반환되며, 수락된 관심은 반환되지 않습니다.
           <br />
           · <b className="text-ink">유상 크레딧의 청약철회·환불:</b> 앱 마켓(App Store·
           Google Play)을 통해 구매한 크레딧은 각 마켓의 환불 정책과 절차를 따릅니다.
@@ -149,7 +149,7 @@ export default function Terms() {
 
       <footer className="mt-12 border-t border-line pt-4 text-[12px] text-muted">
         지아이컴퍼니 · 대표 김경수 · 사업자등록번호 242-20-02430 ·
-        인천광역시 서해구 청라한내로100번길 10, 4층 411,412호 B054호 · hello@senipick.com
+        인천광역시 서해구 청라한내로100번길 10, 4층 411,412호 B054호 · 1212ntnt@naver.com
       </footer>
     </main>
   );

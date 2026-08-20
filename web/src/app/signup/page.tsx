@@ -5,11 +5,34 @@
    비밀번호 확인칸이 없으면 오타 난 채로 가입되어 다시 못 들어온다
    (비밀번호 재설정 흐름이 아직 없다). */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
 import OAuthButtons from "@/components/OAuthButtons";
+
+/* 인증번호 대기 상태를 저장해 둔다 — 메일 앱에 갔다 오는 게 이 흐름에서
+   가장 흔한 동작인데, 그때마다 처음부터 다시 시작하면 안 된다. */
+const OTP_KEY = "hobiday.signup.otp";
+const OTP_TTL = 30 * 60 * 1000; // 인증번호 수명보다 넉넉히
+
+const saveOtpState = (email: string) =>
+  localStorage.setItem(OTP_KEY, JSON.stringify({ email, at: Date.now() }));
+const clearOtpState = () => localStorage.removeItem(OTP_KEY);
+const loadOtpState = (): string | null => {
+  try {
+    const raw = localStorage.getItem(OTP_KEY);
+    if (!raw) return null;
+    const { email, at } = JSON.parse(raw);
+    if (typeof email !== "string" || Date.now() - at > OTP_TTL) {
+      clearOtpState();
+      return null;
+    }
+    return email;
+  } catch {
+    return null;
+  }
+};
 
 const inputCls =
   // iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 — 16px 유지
@@ -25,6 +48,15 @@ export default function Signup() {
   const [busy, setBusy] = useState(false);
   const [otp, setOtp] = useState(""); // 가입 확인 인증번호 (메일의 6자리)
   const [sentMail, setSentMail] = useState(false);
+
+  // 메일 확인하러 나갔다 돌아와도(앱 재시작 포함) 인증번호 화면을 복원한다
+  useEffect(() => {
+    const saved = loadOtpState();
+    if (saved) {
+      setEmail(saved);
+      setSentMail(true);
+    }
+  }, []);
 
   if (!sb) {
     return (
@@ -51,14 +83,23 @@ export default function Signup() {
     const { data, error } = await sb.auth.signUp({ email, password: pw });
     setBusy(false);
     if (error) {
+      // Supabase 원문은 영어다 — 사용자가 고칠 수 있는 말로 바꿔서 보여준다
+      const m = error.message.toLowerCase();
       return alert(
-        error.message.includes("already registered")
+        m.includes("already registered")
           ? "이미 가입된 이메일이에요. 로그인해주세요."
-          : `가입 실패: ${error.message}`
+          : m.includes("password")
+            ? "비밀번호는 6자 이상으로 해주세요."
+            : m.includes("email")
+              ? "이메일 주소를 다시 확인해주세요."
+              : m.includes("rate") || m.includes("seconds")
+                ? "요청이 너무 잦아요. 잠시 후 다시 시도해주세요."
+                : "가입하지 못했어요. 잠시 후 다시 시도해주세요."
       );
     }
     // 이메일 확인이 켜져 있으면 세션 없이 확인 메일이 발송됨
     if (!data.session) {
+      saveOtpState(email);
       setSentMail(true);
       return;
     }
@@ -83,6 +124,7 @@ export default function Signup() {
       );
     }
     // 인증과 동시에 로그인된다
+    clearOtpState();
     router.push("/profile/new");
   };
 
@@ -135,6 +177,7 @@ export default function Signup() {
         <br />
         <Link
           href="/login"
+          onClick={clearOtpState}
           className="mt-3 inline-block text-[13px] font-semibold text-muted/70"
         >
           로그인으로 돌아가기

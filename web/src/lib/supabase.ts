@@ -283,7 +283,8 @@ export async function proposeConfirm(id: string) {
   if (!sb) return { error: "no_client" };
   const { data, error } = await sb.rpc("session_propose_confirm", { p_session: id });
   if (error) return { error: error.message };
-  return data as { ok?: boolean; matched?: number; error?: string };
+  // notify — 제안을 받아야 하는 게스트들. 클라이언트가 push 를 부탁한다
+  return data as { ok?: boolean; matched?: number; notify?: string[]; error?: string };
 }
 
 export async function withdrawConfirm(id: string) {
@@ -304,6 +305,8 @@ export async function acceptConfirm(id: string) {
     confirmed?: boolean;
     capacity?: number;
     waiting?: number;
+    /** 확정된 순간 알릴 사람들 (나 제외, 호스트 포함) */
+    notify?: string[];
     error?: string;
   };
 }
@@ -390,7 +393,13 @@ export async function approveSignup(sessionId: string, userId: string) {
     p_user: userId,
   });
   if (error) return { error: error.message };
-  return data as { ok?: boolean; chat_opened?: boolean; error?: string };
+  // notify — 방이 열렸을 때 이미 확정돼 있던 사람들 (호스트·방금 승인된 사람 제외)
+  return data as {
+    ok?: boolean;
+    chat_opened?: boolean;
+    notify?: string[];
+    error?: string;
+  };
 }
 
 export async function rejectSignup(sessionId: string, userId: string) {
@@ -1013,7 +1022,8 @@ export async function sendSessionChat(sessionId: string, body: string) {
     p_body: body,
   });
   if (error) return { error: error.message };
-  return data as { ok?: boolean; error?: string };
+  // notify — 나 빼고 확정자 전원. 클라이언트가 push 를 부탁한다
+  return data as { ok?: boolean; notify?: string[]; error?: string };
 }
 
 export async function markSessionChatRead(sessionId: string) {

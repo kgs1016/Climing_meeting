@@ -128,7 +128,7 @@ export default function Privacy() {
         <p>
           책임자: 김경수 (대표)
           <br />
-          문의: hello@senipick.com
+          문의: 1212ntnt@naver.com
         </p>
         <p>
           개인정보 침해 관련 상담은 개인정보침해신고센터(privacy.kisa.or.kr, 국번 없이
@@ -145,7 +145,7 @@ export default function Privacy() {
 
       <footer className="mt-12 border-t border-line pt-4 text-[12px] text-muted">
         지아이컴퍼니 · 대표 김경수 · 사업자등록번호 242-20-02430 ·
-        인천광역시 서해구 청라한내로100번길 10, 4층 411,412호 B054호 · hello@senipick.com
+        인천광역시 서해구 청라한내로100번길 10, 4층 411,412호 B054호 · 1212ntnt@naver.com
       </footer>
     </main>
   );

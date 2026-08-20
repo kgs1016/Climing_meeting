@@ -14,12 +14,32 @@ import { currentUser, fetchMyProfileDb, hasSupabase } from "@/lib/supabase";
    화면마다 따로 막으면 하나 빠뜨렸을 때 그 길로 다 들어온다. 레이아웃에서
    한 번에 막는다. */
 
-// 프로필을 만들러 가는 길과 로그인·가입은 막으면 안 된다
-const OPEN_PATHS = ["/login", "/signup", "/profile/new", "/auth/callback"];
+/* 막으면 안 되는 길:
+   로그인·가입·프로필 작성은 당연하고, 내 정보(/me)와 약관·안전 설정도
+   열어야 한다 — 안 그러면 프로필을 만들기 싫은 사람이 로그아웃·탈퇴를
+   못 하고(애플 5.1.1), 가입 직후 약관을 눌러도 게이트에 막힌다(애플 1.2). */
+const OPEN_PATHS = [
+  "/login",
+  "/signup",
+  "/reset",
+  "/auth/callback",
+  "/profile/new",
+  "/me",
+  "/safety",
+  "/terms",
+  "/privacy",
+];
 
 /* 한 번 완성한 사람에게 화면을 옮길 때마다 다시 묻지 않는다.
-   완성 전(false)은 캐시하지 않는다 — 방금 채웠을 수 있다. */
-let completeOnce = false;
+   완성 전(false)은 캐시하지 않는다 — 방금 채웠을 수 있다.
+   누구의 완성인지(uid)를 같이 들고 있는다 — 같은 폰에서 로그아웃 후
+   다른 계정으로 들어오면 남의 캐시로 게이트가 뚫리기 때문. */
+let completeUid: string | null = null;
+
+/** 로그아웃·탈퇴 때 부른다 — SPA 라 페이지 리로드가 없어 모듈 상태가 남는다 */
+export function resetProfileGate() {
+  completeUid = null;
+}
 
 export default function RequireProfile({
   children,
@@ -31,12 +51,12 @@ export default function RequireProfile({
 
   // null = 확인 중. 깜빡임을 막으려고 이때는 아무것도 그리지 않는다.
   const [ok, setOk] = useState<boolean | null>(
-    !hasSupabase() || open || completeOnce ? true : null
+    !hasSupabase() || open || completeUid !== null ? true : null
   );
   const [missing, setMissing] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!hasSupabase() || open || completeOnce) {
+    if (!hasSupabase() || open) {
       setOk(true);
       return;
     }
@@ -48,12 +68,18 @@ export default function RequireProfile({
         if (alive) setOk(true);
         return;
       }
+      // 캐시는 같은 사람일 때만 믿는다
+      if (completeUid === user.id) {
+        if (alive) setOk(true);
+        return;
+      }
       const p = await fetchMyProfileDb();
       if (!alive) return;
       if (isProfileComplete(p)) {
-        completeOnce = true;
+        completeUid = user.id;
         setOk(true);
       } else {
+        completeUid = null; // 캐시가 다른 계정 것이었다면 지운다
         setMissing(p ? missingFields(p) : []);
         setOk(false);
       }

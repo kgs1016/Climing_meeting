@@ -115,9 +115,8 @@ workflows:
     integrations:
       app_store_connect: hobiday_asc
     environment:
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: kr.hobiday.app
+      groups:
+        - appstore # CERTIFICATE_PRIVATE_KEY — Codemagic UI 에 등록한 인증서 열쇠
       java: 21
       node: 22
       vars:
@@ -132,6 +131,15 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
+      - name: 서명 파일 준비 (없으면 만든다)
+        # 자동(ios_signing) 방식이 Distribution 인증서를 못 만들어서
+        # 명시적으로 간다 — --create 가 인증서·프로파일을 생성한다.
+        # 인증서 열쇠(CERTIFICATE_PRIVATE_KEY)를 우리가 쥐고 있어서
+        # 다음 빌드부터는 같은 인증서를 재사용한다 (2장 제한에 안 걸림).
+        script: |
+          keychain initialize
+          app-store-connect fetch-signing-files "kr.hobiday.app" --type IOS_APP_STORE --create --certificate-key=@env:CERTIFICATE_PRIVATE_KEY
+          keychain add-certificates
       - name: 서명 프로파일 적용
         script: xcode-project use-profiles
       - name: IPA 빌드

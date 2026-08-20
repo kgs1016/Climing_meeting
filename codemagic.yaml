@@ -99,3 +99,49 @@ workflows:
       - web/android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/*.aab
 
+  # ── iOS 릴리스 (서명된 IPA → TestFlight 자동 업로드) ──
+  # 선행 조건 (Codemagic UI 에서):
+  #   1. Apple Developer Portal 연동 — App Store Connect API 키를
+  #      "hobiday_asc" 라는 이름으로 등록 (yaml 이 이 이름을 찾는다)
+  #   2. App Store Connect 에 kr.hobiday.app 앱 레코드가 있어야
+  #      TestFlight 업로드가 된다
+  # 서명 인증서·프로비저닝은 Codemagic 이 API 키로 자동 생성한다 —
+  # 맥 없이 iOS 를 빌드하는 핵심이 이 자동 서명이다.
+  ios-release:
+    name: iOS release (TestFlight)
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    working_directory: web
+    integrations:
+      app_store_connect: hobiday_asc
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: kr.hobiday.app
+      java: 21
+      node: 22
+      vars:
+        NEXT_PUBLIC_SUPABASE_URL: "https://loigwslmwvltdurjttpe.supabase.co"
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_zEXgjGowxniQ8rA1oqP-eg_Ilcswqa_"
+    scripts:
+      - name: 의존성 설치
+        script: npm ci
+      - name: 웹 빌드 + 네이티브 반영
+        script: npm run sync
+      - name: 빌드 번호 올리기 (TestFlight 는 같은 번호를 두 번 안 받는다)
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+      - name: 서명 프로파일 적용
+        script: xcode-project use-profiles
+      - name: IPA 빌드
+        script: xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
+    artifacts:
+      - web/build/ios/ipa/*.ipa
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+

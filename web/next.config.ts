@@ -24,7 +24,11 @@ const nextConfig: NextConfig = {
     root: path.join(__dirname),
   },
 
-  ...(native ? { output: "export" as const } : {}),
+  // trailingSlash 는 네이티브에서만 켠다. 네이티브 웹뷰의 파일 서버는
+  // /login 같은 확장자 없는 주소를 login/index.html 구조여야 찾는다 —
+  // 없으면 첫 화면으로 조용히 대체돼 "버튼이 안 눌리는" 증상이 된다.
+  // 웹(Vercel)에 켜면 /intro.html 이 죽으므로 (한 번 겪음) 절대 공통으로 켜지 않는다.
+  ...(native ? { output: "export" as const, trailingSlash: true } : {}),
 };
 
 export default nextConfig;

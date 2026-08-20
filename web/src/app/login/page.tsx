@@ -239,6 +239,20 @@ export default function Login() {
         </button>
       </form>
 
+      {/* 애플 심사 1.2 — UGC 앱은 약관 동의가 가입 흐름에 보여야 한다.
+          소셜·이메일 어느 쪽으로 가입하든 이 화면을 지나므로 여기 둔다. */}
+      <p className="mt-4 text-center text-[11.5px] leading-relaxed text-muted/80">
+        가입하면 하비데이의{" "}
+        <a href="/terms" className="underline underline-offset-2 text-muted">
+          이용약관
+        </a>
+        과{" "}
+        <a href="/privacy" className="underline underline-offset-2 text-muted">
+          개인정보처리방침
+        </a>
+        에 동의하는 것으로 봅니다.
+      </p>
+
       <button
         onClick={() => setMode(mode === "login" ? "signup" : "login")}
         className="mt-5 w-full text-center text-[13px] font-semibold text-muted"

@@ -285,6 +285,15 @@ export default function Me() {
       <p className="mt-6 text-center text-[11.5px] text-muted">
         HOBIDAY — 취미로 시작해서, 사람으로 끝나는 하루
       </p>
+      <p className="mt-2 pb-2 text-center text-[11px] text-muted/70">
+        <a href="/terms" className="underline underline-offset-2">
+          이용약관
+        </a>
+        {" · "}
+        <a href="/privacy" className="underline underline-offset-2">
+          개인정보처리방침
+        </a>
+      </p>
     </main>
   );
 }

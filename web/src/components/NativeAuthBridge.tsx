@@ -41,5 +41,20 @@ export default function NativeAuthBridge() {
     return onPushTap((url) => router.push(url));
   }, [router]);
 
+  // 네이티브 웹뷰의 파일 서버는 /login 같은 확장자 없는 주소를 만나면
+  // 무조건 첫 화면 파일(index.html)로 대체한다. 그러면 주소는 /login 인데
+  // 화면은 첫 화면인 꼬인 상태가 된다 — intro.html 의 "사전 가입하기",
+  // 약관·방침 링크가 전부 이렇게 샜다. 여기서 주소를 읽어 라우터로
+  // 제 화면까지 다시 걸어간다 (라우터 이동은 파일 서버를 안 탄다).
+  useEffect(() => {
+    if (!isNativePush()) return;
+    const { pathname, search, hash } = window.location;
+    const clean = pathname.replace(/\/+$/, "");
+    if (clean && clean !== "" && !clean.includes(".")) {
+      router.replace(clean + search + hash);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return null;
 }

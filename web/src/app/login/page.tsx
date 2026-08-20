@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase, enabledOAuthProviders } from "@/lib/supabase";
 import { signInWithProvider } from "@/lib/nativeAuth";
@@ -243,13 +244,13 @@ export default function Login() {
           소셜·이메일 어느 쪽으로 가입하든 이 화면을 지나므로 여기 둔다. */}
       <p className="mt-4 text-center text-[11.5px] leading-relaxed text-muted/80">
         가입하면 하비데이의{" "}
-        <a href="/terms" className="underline underline-offset-2 text-muted">
+        <Link href="/terms" className="underline underline-offset-2 text-muted">
           이용약관
-        </a>
+        </Link>
         과{" "}
-        <a href="/privacy" className="underline underline-offset-2 text-muted">
+        <Link href="/privacy" className="underline underline-offset-2 text-muted">
           개인정보처리방침
-        </a>
+        </Link>
         에 동의하는 것으로 봅니다.
       </p>
 

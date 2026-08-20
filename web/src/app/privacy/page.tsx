@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BackButton from "@/components/BackButton";
 
 /* 개인정보처리방침 — 스토어 등록의 필수 URL (hobiday.com/privacy).
    실제 앱이 수집·처리하는 것만 적는다. 부풀리면 심사에서 데이터 안전
@@ -19,7 +20,12 @@ const S = ({ title, children }: { title: string; children: React.ReactNode }) =>
 export default function Privacy() {
   return (
     <main className="mx-auto max-w-2xl px-5 pb-16">
-      <header className="pt-10">
+      {/* 가입 화면에서 열어보는 문서다 — 네이티브 앱은 브라우저 뒤로가기가
+          없어서, 이 버튼이 없으면 여기 갇힌다 */}
+      <div className="pt-5">
+        <BackButton />
+      </div>
+      <header className="pt-4">
         <p className="text-[13px] font-extrabold tracking-[2px] text-accent">HOBIDAY</p>
         <h1 className="mt-2 text-[22px] font-extrabold tracking-tight">개인정보처리방침</h1>
         <p className="mt-1 text-[12.5px] text-muted">시행일: 2026년 8월 20일</p>

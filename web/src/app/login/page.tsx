@@ -61,7 +61,14 @@ export default function Login() {
 
   return (
     <main className="px-4">
-      <header className="pt-10 pb-6 text-center">
+      {/* 로그아웃이 replace 로 와서 히스토리가 꼬여 있을 수 있다 —
+          항상 첫 화면(하비데이가 뭔가요? 가 있는)으로 보낸다 */}
+      <div className="pt-5">
+        <Link href="/" aria-label="처음으로" className="text-lg text-muted">
+          ←
+        </Link>
+      </div>
+      <header className="pt-4 pb-6 text-center">
         <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
           HOBIDAY
         </p>

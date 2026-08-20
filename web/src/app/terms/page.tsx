@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import BackButton from "@/components/BackButton";
 
 /* 이용약관 — 스토어 등록 필수 URL (hobiday.com/terms).
    애플 심사 1.2(UGC 앱)가 요구하는 "약관 동의" 의 대상 문서다.
@@ -19,7 +20,12 @@ const S = ({ title, children }: { title: string; children: React.ReactNode }) =>
 export default function Terms() {
   return (
     <main className="mx-auto max-w-2xl px-5 pb-16">
-      <header className="pt-10">
+      {/* 가입 화면에서 열어보는 문서다 — 네이티브 앱은 브라우저 뒤로가기가
+          없어서, 이 버튼이 없으면 여기 갇힌다 */}
+      <div className="pt-5">
+        <BackButton />
+      </div>
+      <header className="pt-4">
         <p className="text-[13px] font-extrabold tracking-[2px] text-accent">HOBIDAY</p>
         <h1 className="mt-2 text-[22px] font-extrabold tracking-tight">이용약관</h1>
         <p className="mt-1 text-[12.5px] text-muted">시행일: 2026년 8월 20일</p>

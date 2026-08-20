@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
+import BackButton from "@/components/BackButton";
 import OAuthButtons from "@/components/OAuthButtons";
 
 /* 인증번호 대기 상태를 저장해 둔다 — 메일 앱에 갔다 오는 게 이 흐름에서
@@ -188,7 +189,10 @@ export default function Signup() {
 
   return (
     <main className="px-4">
-      <header className="pt-10 pb-6 text-center">
+      <div className="pt-5">
+        <BackButton fallback="/" />
+      </div>
+      <header className="pt-4 pb-6 text-center">
         <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
           HOBIDAY
         </p>

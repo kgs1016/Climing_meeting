@@ -12,6 +12,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "@/lib/supabase";
+import BackButton from "@/components/BackButton";
 
 const inputCls =
   // iOS 는 16px 미만 입력창에 포커스하면 화면을 강제로 확대한다 — 16px 유지
@@ -91,7 +92,10 @@ export default function Reset() {
 
   return (
     <main className="px-4">
-      <header className="pt-10 pb-6 text-center">
+      <div className="pt-5">
+        <BackButton fallback="/login" />
+      </div>
+      <header className="pt-4 pb-6 text-center">
         <p className="text-[17px] font-extrabold tracking-[2px] text-accent">
           HOBIDAY
         </p>

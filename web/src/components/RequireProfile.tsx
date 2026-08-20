@@ -14,8 +14,8 @@ import { currentUser, fetchMyProfileDb, hasSupabase } from "@/lib/supabase";
    화면마다 따로 막으면 하나 빠뜨렸을 때 그 길로 다 들어온다. 레이아웃에서
    한 번에 막는다. */
 
-// 프로필을 만들러 가는 길과 로그인은 막으면 안 된다
-const OPEN_PATHS = ["/login", "/profile/new", "/auth/callback"];
+// 프로필을 만들러 가는 길과 로그인·가입은 막으면 안 된다
+const OPEN_PATHS = ["/login", "/signup", "/profile/new", "/auth/callback"];
 
 /* 한 번 완성한 사람에게 화면을 옮길 때마다 다시 묻지 않는다.
    완성 전(false)은 캐시하지 않는다 — 방금 채웠을 수 있다. */

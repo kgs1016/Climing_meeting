@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryId } from "@/lib/queryId";
 import { careerLabel, level } from "@/lib/levels";
-import { DEMO_ID, buildDemoRoom, demoMatches } from "@/lib/roomDemo";
+import { DEMO_ID, buildDemoRoom } from "@/lib/roomDemo";
 import {
   VIDEO_MAX_BYTES,
   addSessionVideo,
@@ -53,7 +53,6 @@ export default function Room() {
   const [matches, setMatches] = useState<Awaited<ReturnType<typeof fetchMatches>>>(null);
   const [submitted, setSubmitted] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
     if (qid === undefined) return; // 주소를 아직 안 읽었다
@@ -135,22 +134,7 @@ export default function Room() {
     load();
   };
 
-  const onSubmit = async () => {
-    if (!confirm("제출하면 상대에게는 알리지 않아요. 서로 선택한 경우에만 열려요.\n제출할까요?"))
-      return;
-    if (isDemo) {
-      // 데모에선 고른 사람이 전부 나를 고른 것으로 가정해 결과 화면을 보여준다
-      setSubmitted(true);
-      setMatches(demoMatches(picked));
-      return;
-    }
-    setBusy(true);
-    const r = await submitSelection(id, [...picked]);
-    setBusy(false);
-    if (r.error) return alert(`실패: ${r.error}`);
-    setSubmitted(true);
-    setMatches(await fetchMatches(id));
-  };
+
 
   return (
     <main className="px-4 pb-10">
@@ -271,99 +255,10 @@ export default function Room() {
         </p>
       </section>
 
-      {/* 최종선택 */}
-      <section className="mt-3 rounded-2xl border border-line bg-surface p-4">
-        <h2 className="text-[14px] font-bold">💌 비공개 최종선택</h2>
-
-        {!room.selection_open ? (
-          <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-            모임이 시작되면 열려요. 다시 만나고 싶은 사람을 조용히 고르면 되고,{" "}
-            <b className="text-ink">서로 고른 경우에만</b> 채팅이 열려요.
-          </p>
-        ) : matches && matches.length > 0 ? (
-          <div className="mt-3 flex flex-col gap-2">
-            <p className="text-[13px] font-bold text-mint">🎉 서로 선택했어요!</p>
-            {matches.map((m) => (
-              <div
-                key={m.id}
-                className="rounded-xl border border-mint/40 bg-mint/10 px-3.5 py-3"
-              >
-                <p className="text-[14px] font-extrabold">
-                  {m.nickname}
-                  <span className="ml-1.5 text-[12px] font-medium text-muted">
-                    {m.age} · {m.home_gym}
-                  </span>
-                </p>
-              </div>
-            ))}
-            <button
-              onClick={() => router.push("/chat")}
-              className="mt-1 w-full rounded-xl bg-accent py-3 text-[14px] font-bold text-white"
-            >
-              채팅하러 가기
-            </button>
-          </div>
-        ) : opposite.length === 0 ? (
-          <p className="mt-2 text-[12.5px] text-muted">아직 선택할 상대가 없어요.</p>
-        ) : (
-          <>
-            <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-              다시 만나고 싶은 사람을 고르세요.{" "}
-              <b className="text-ink">아무도 안 골라도 괜찮아요.</b>
-              <br />
-              상대에게는 알리지 않아요.
-            </p>
-            <div className="mt-3 flex flex-col gap-1.5">
-              {opposite.map((p) => {
-                const on = picked.has(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    onClick={() =>
-                      setPicked((s) => {
-                        const n = new Set(s);
-                        if (n.has(p.id)) n.delete(p.id);
-                        else n.add(p.id);
-                        return n;
-                      })
-                    }
-                    className={`flex items-center justify-between rounded-xl px-3.5 py-3 text-left ${
-                      on
-                        ? "border border-accent bg-accent/10"
-                        : "border border-line bg-surface2"
-                    }`}
-                  >
-                    <span className="text-[14px] font-bold">
-                      {p.nickname}
-                      <span className="ml-1.5 text-[12px] font-medium text-muted">
-                        {p.age} · L{p.level}
-                      </span>
-                    </span>
-                    <span className={on ? "text-accent" : "text-muted"}>
-                      {on ? "♥" : "♡"}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <button
-              disabled={busy}
-              onClick={onSubmit}
-              className="mt-3 w-full rounded-xl bg-accent py-3 text-[14px] font-bold text-white disabled:opacity-50"
-            >
-              {busy ? "제출 중…" : `선택 제출하기 (${picked.size}명)`}
-            </button>
-
-            {submitted && (
-              <p className="mt-2.5 rounded-lg bg-surface2 px-3 py-2.5 text-center text-[12.5px] leading-relaxed text-muted">
-                ✓ 제출했어요. 상대도 나를 고르면 여기에 뜨고,
-                <br />
-                아니면 아무 일도 일어나지 않아요. 다시 골라도 돼요.
-              </p>
-            )}
-          </>
-        )}
-      </section>
+      {/* 최종선택은 뺐다 (2026-08 결정) — 모임 채팅이 생겨서 "서로 고르기"
+          없이도 이어질 사람은 이어진다. 어색한 의식을 남길 이유가 없다.
+          서버 함수(selection_submit·my_matches)는 남아 있으니 되살리려면
+          git 이력의 이 섹션을 복원하면 된다. */}
     </main>
   );
 }

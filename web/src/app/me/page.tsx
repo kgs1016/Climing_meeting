@@ -19,6 +19,7 @@ import {
   fetchCredits,
   fetchMyProfileDb,
   fetchMyVideos,
+  signedPhotoUrls,
   type Credits,
 } from "@/lib/supabase";
 
@@ -29,6 +30,7 @@ export default function Me() {
   const [authed, setAuthed] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [profile, setProfile] = useState<MyProfile | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [videoCount, setVideoCount] = useState(0);
   const [credits, setCredits] = useState<Credits | null>(null);
   const [showCredits, setShowCredits] = useState(false);
@@ -61,6 +63,8 @@ export default function Me() {
       setVideoCount(vids?.length ?? 0);
       setCredits(cr);
       setLoading(false);
+      if (prof?.photo)
+        setPhotoUrl((await signedPhotoUrls([prof.photo]))[prof.photo] ?? null);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -96,9 +100,18 @@ export default function Me() {
 
       <>
           <section className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-2xl">
-              🧗
-            </div>
+            {photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={photoUrl}
+                alt="내 프로필 사진"
+                className="h-16 w-16 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-accent/15 text-2xl">
+                🧗
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               {profile ? (
                 <>

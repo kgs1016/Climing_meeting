@@ -6,6 +6,7 @@ import { CAREERS, LEVELS, type CareerId, type LevelId } from "@/lib/levels";
 import { loadMyProfile, saveMyProfile, type MyProfile } from "@/lib/myProfile";
 import { isProfileComplete } from "@/lib/profileGate";
 import { isNativeApp, pickPhotoNative } from "@/lib/nativeCamera";
+import { downscaleImage } from "@/lib/imageResize";
 import {
   PHOTO_MAX_BYTES,
   claimProfileBonus,
@@ -81,7 +82,9 @@ export default function ProfileNew() {
   const [busy, setBusy] = useState(false);
 
   /** 고르는 즉시 올린다 — 저장 버튼에서 한꺼번에 올리면 실패 원인을 알기 어렵다 */
-  const pickPhoto = async (file: File) => {
+  const pickPhoto = async (raw: File) => {
+    // 원본(수 MB)을 그대로 올리면 보는 쪽이 매번 느리다 — 올리기 전에 줄인다
+    const file = await downscaleImage(raw);
     if (file.size > PHOTO_MAX_BYTES) {
       return alert(
         `사진이 너무 커요 (${(file.size / 1024 / 1024).toFixed(1)}MB). 5MB 이하로 올려주세요.`

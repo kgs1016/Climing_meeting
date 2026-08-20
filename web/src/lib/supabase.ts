@@ -640,7 +640,13 @@ export async function uploadProfilePhoto(
   return { path };
 }
 
-/** 비공개 버킷이라 표시도 서명 URL 로만 된다. 목록은 한 번에 받아온다. */
+/** 비공개 버킷이라 표시도 서명 URL 로만 된다. 목록은 한 번에 받아온다.
+ *
+ *  발급받은 주소는 유효기간 동안 재사용한다 — 매번 새로 발급하면 주소가
+ *  달라져서 브라우저가 같은 사진을 캐시하지 못하고, 화면에 올 때마다
+ *  전부 다시 내려받는다 (폰에서 사진이 느리던 주범). */
+const _photoUrlCache = new Map<string, { url: string; exp: number }>();
+
 export async function signedPhotoUrls(
   paths: string[],
   seconds = 3600
@@ -648,10 +654,25 @@ export async function signedPhotoUrls(
   const sb = getSupabase();
   const uniq = [...new Set(paths.filter(Boolean))];
   if (!sb || uniq.length === 0) return {};
-  const { data } = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(uniq, seconds);
+
+  const now = Date.now();
   const out: Record<string, string> = {};
+  const need: string[] = [];
+  for (const p of uniq) {
+    const c = _photoUrlCache.get(p);
+    if (c && c.exp > now) out[p] = c.url;
+    else need.push(p);
+  }
+  if (need.length === 0) return out;
+
+  const { data } = await sb.storage.from(PHOTO_BUCKET).createSignedUrls(need, seconds);
+  // 만료 5분 전까지만 재사용 — 화면에 뜬 채로 만료되는 걸 피한다
+  const exp = now + (seconds - 300) * 1000;
   for (const d of data ?? []) {
-    if (d.path && d.signedUrl) out[d.path] = d.signedUrl;
+    if (d.path && d.signedUrl) {
+      out[d.path] = d.signedUrl;
+      _photoUrlCache.set(d.path, { url: d.signedUrl, exp });
+    }
   }
   return out;
 }

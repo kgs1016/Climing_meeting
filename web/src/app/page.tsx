@@ -277,7 +277,7 @@ export default function Home() {
           </Link>
           <Link
             href="/intro.html"
-            className="rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-muted"
+            className="rounded-xl border border-line bg-surface py-3.5 text-center text-[14px] font-bold text-ink"
           >
             하비데이가 뭔가요?
           </Link>

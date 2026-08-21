@@ -125,8 +125,12 @@ export default function Me() {
                 <>
                   <p className="text-[17px] font-extrabold">{profile.nickname}</p>
                   <p className="mt-0.5 text-[13px] text-muted">
-                    L{profile.level} {level(profile.level).name} (
-                    {level(profile.level).colors}) · {profile.homeGym}
+                    {[
+                      `L${profile.level} ${level(profile.level).name} (${level(profile.level).colors})`,
+                      profile.homeGym,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   <p className="mt-0.5 text-[12px] text-muted">
                     {[

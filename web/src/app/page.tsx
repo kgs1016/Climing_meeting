@@ -107,6 +107,7 @@ export default function Home() {
       const paths = [
         ...(ppl ?? []).map((x) => x.photo),
         ...(rows ?? []).map((r) => r.host_photo),
+        prof?.photo, // "내 프로필 (공개 중)" 카드 — 빼먹으면 내 사진만 이모지로 뜬다
       ].filter(Boolean) as string[];
       if (ppl) setPeople(ppl);
       if (paths.length > 0) setPhotoUrls(await signedPhotoUrls(paths));
@@ -388,13 +389,22 @@ export default function Home() {
           {me ? (
             <div className="rounded-2xl border border-mint/40 bg-mint/5 p-4">
               <div className="flex items-center gap-3.5">
-                <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl ${
-                    me.gender === "f" ? "bg-female/15" : "bg-male/15"
-                  }`}
-                >
-                  🧗
-                </div>
+                {me.photo && photoUrls[me.photo] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoUrls[me.photo]}
+                    alt="내 프로필 사진"
+                    className="h-14 w-14 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl ${
+                      me.gender === "f" ? "bg-female/15" : "bg-male/15"
+                    }`}
+                  >
+                    🧗
+                  </div>
+                )}
                 <div className="min-w-0 flex-1">
                   <p className="font-extrabold text-[15px]">
                     {me.nickname}
@@ -403,8 +413,15 @@ export default function Home() {
                     </span>
                   </p>
                   <p className="mt-0.5 text-[12.5px] text-muted">
-                    {me.age} · {me.area} · L{me.level} {level(me.level).name} ·{" "}
-                    {me.homeGym} · {me.mbti}
+                    {[
+                      me.age,
+                      me.area,
+                      `L${me.level} ${level(me.level).name}`,
+                      me.homeGym,
+                      me.mbti,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                   {me.intro && (
                     <p className="mt-1 text-[12.5px] text-ink/85">

@@ -4,8 +4,15 @@
 <dict>
   <key>CAPACITOR_DEBUG</key>
 	<string>$(CAPACITOR_DEBUG)</string>
+	<!-- 한국어 선언 — 사진 선택 시트 같은 시스템 UI 는 기기 언어가 아니라
+	     "앱이 지원한다고 선언한 언어" 로 뜬다. en 으로 두면 한국 기기에서도
+	     Photo Library / Take Photo 가 영어로 나온다. -->
 	<key>CFBundleDevelopmentRegion</key>
-	<string>en</string>
+	<string>ko</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ko</string>
+	</array>
 	<key>CFBundleDisplayName</key>
         <string>HOBIDAY</string>
 	<key>CFBundleExecutable</key>

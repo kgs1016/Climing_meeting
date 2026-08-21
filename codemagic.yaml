@@ -91,10 +91,13 @@ workflows:
       - name: 웹 빌드 + 네이티브 반영
         script: npm run sync
       - name: 안드로이드 릴리스 빌드
+        # BUILD_NUMBER 를 넘겨야 versionCode 가 빌드마다 올라간다 —
+        # 플레이스토어는 같은 versionCode 를 두 번 받지 않는다.
+        # PROJECT_BUILD_NUMBER 는 Codemagic 이 주는 이 앱의 누적 빌드 수.
         script: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease
+          BUILD_NUMBER=$(($PROJECT_BUILD_NUMBER + 10)) ./gradlew bundleRelease
     artifacts:
       - web/android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/*.aab

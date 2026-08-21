@@ -165,8 +165,10 @@ export default function Home() {
   };
 
 
-  // 오픈 전 대기 화면 — 가입·프로필은 끝냈고 기능만 잠긴 상태
-  if (flags && !flags.sessions_open && !flags.people_open) {
+  // 오픈 전 대기 화면 — 가입·프로필은 끝냈고 기능만 잠긴 상태.
+  // authed 를 함께 보는 이유: 로그인도 안 한 사람에게 "가입 완료!" 가 뜨면
+  // 안 된다. 비로그인은 아래 로그인 안내 화면으로 내려보낸다.
+  if (authed && flags && !flags.sessions_open && !flags.people_open) {
     const openDay = flags.open_at
       ? new Date(flags.open_at).toLocaleDateString("ko-KR", {
           month: "long",

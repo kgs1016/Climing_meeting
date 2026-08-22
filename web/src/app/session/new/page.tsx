@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LEVELS, type LevelId } from "@/lib/levels";
 import { hasSupabase, currentUser, fetchMyProfileDb, createSession } from "@/lib/supabase";
@@ -71,6 +71,22 @@ export default function NewSession() {
   const router = useRouter();
   const [gym, setGym] = useState(GYMS[0]);
   const [date, setDate] = useState("");
+  /* 달력에서 지난 날짜를 아예 못 고르게 한다 (서버도 과거 30분 · 90일
+     초과를 거부하니 같은 범위로 맞춘다).
+     빌드 시점이 아니라 브라우저에서 계산해야 하므로 useEffect 로 넣는다 —
+     프리렌더된 값이 박히면 하루만 지나도 어제 날짜가 min 이 된다. */
+  const [range, setRange] = useState({ min: "", max: "" });
+  useEffect(() => {
+    const ymd = (d: Date) =>
+      // toISOString 은 UTC 라 한국 오전 9시 이전에 하루가 밀린다
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+        d.getDate()
+      ).padStart(2, "0")}`;
+    const now = new Date();
+    const in90 = new Date(now);
+    in90.setDate(in90.getDate() + 90);
+    setRange({ min: ymd(now), max: ymd(in90) });
+  }, []);
   const [startTime, setStartTime] = useState("15:00");
   const [endTime, setEndTime] = useState("17:00");
   const [capacity, setCapacity] = useState<1 | 2>(2);
@@ -192,6 +208,8 @@ export default function NewSession() {
             <input
               type="date"
               value={date}
+              min={range.min}
+              max={range.max}
               onChange={(e) => setDate(e.target.value)}
               className={inputCls}
             />

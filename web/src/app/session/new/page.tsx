@@ -129,9 +129,15 @@ export default function NewSession() {
     }
     if (!date) return alert("날짜를 선택해주세요");
     if (endTime <= startTime) return alert("종료 시각이 시작보다 빨라요");
-    // 서버도 막지만(30분 이내·90일 초과 거부) 여기서 먼저 알려주는 게 친절하다.
-    // 달력이 지난 날짜를 막아줘도 "오늘 + 방금 지난 시각" 은 통과되므로 필요하다.
-    if (new Date(`${date}T${startTime}:00`) < new Date(Date.now() + 30 * 60 * 1000))
+    // 서버도 막지만(지난 시각·30분 이내·90일 초과 거부) 여기서 먼저 알려주는
+    // 게 친절하다. 달력이 지난 날짜를 막아줘도 "오늘 + 방금 지난 시각" 은
+    // 통과되므로 필요하다.
+    // 지난 시각과 임박은 고쳐야 할 게 다르다 — 지난 건 잘못 고른 것이고,
+    // 임박은 제대로 골랐는데 규칙에 걸린 것이다. 그래서 문구를 나눈다.
+    const startsAt = new Date(`${date}T${startTime}:00`);
+    if (startsAt < new Date())
+      return alert("이미 지난 시각이에요. 시간을 다시 골라주세요");
+    if (startsAt < new Date(Date.now() + 30 * 60 * 1000))
       return alert("모임 시간이 너무 임박했어요. 지금부터 30분 뒤부터 열 수 있어요");
 
     setBusy(true);
@@ -171,8 +177,7 @@ export default function NewSession() {
 
     if (r.error === "too_soon")
       return alert("모임 시간이 너무 임박했어요. 지금부터 30분 뒤부터 열 수 있어요");
-    // 예전 서버(마이그레이션 적용 전)가 돌려주던 코드
-    if (r.error === "past") return alert("이미 지난 시각이에요. 날짜를 확인해주세요");
+    if (r.error === "past") return alert("이미 지난 시각이에요. 시간을 다시 골라주세요");
     if (r.error === "too_far") return alert("모임은 90일 안쪽으로만 열 수 있어요");
     if (r.error) return alert(`등록 실패: ${r.error}`);
     alert("모임을 열었어요! 성비가 맞으면 확정돼요.");

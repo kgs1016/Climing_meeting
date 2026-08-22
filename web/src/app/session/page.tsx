@@ -265,7 +265,6 @@ export default function SessionDetail() {
           <p>{levelRangeLabel(s.levelMin, s.levelMax)}</p>
           <p className="text-muted">
             {s.intensity === "chill" ? "😌 가볍게" : "🔥 빡세게"}
-            {s.afterMeal && " · 🍽 저녁까지 시간 돼요"}
           </p>
           {s.note && <p className="mt-1 text-ink/90">&ldquo;{s.note}&rdquo;</p>}
         </div>

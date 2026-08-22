@@ -73,7 +73,6 @@ export interface DbSession {
   age_min: number;
   age_max: number;
   intensity: "chill" | "hard";
-  after_meal: boolean;
   note: string | null;
   status: string;
   m_confirmed: number;
@@ -115,7 +114,6 @@ export function toSession(
     ageMin: r.age_min,
     ageMax: r.age_max,
     intensity: r.intensity,
-    afterMeal: r.after_meal,
     note: r.note ?? undefined,
     maleJoined: Number(r.m_confirmed),
     femaleJoined: Number(r.f_confirmed),
@@ -194,7 +192,6 @@ export async function createSession(p: {
   ageMin: number;
   ageMax: number;
   intensity: "chill" | "hard";
-  afterMeal: boolean;
   note: string;
 }): Promise<{ id?: string; error?: string }> {
   const sb = getSupabase();
@@ -209,7 +206,7 @@ export async function createSession(p: {
     p_age_min: p.ageMin,
     p_age_max: p.ageMax,
     p_intensity: p.intensity,
-    p_after_meal: p.afterMeal,
+    p_after_meal: false, // 뒤풀이 기능은 접었다 — 컬럼만 남아 있다
     p_note: p.note,
   });
   if (error) return { error: error.message };
@@ -492,7 +489,6 @@ export interface Room {
     ends_at: string;
     capacity: 1 | 2;
     intensity: "chill" | "hard";
-    after_meal: boolean;
     note: string | null;
   };
   me: { id: string; gender: "m" | "f"; level: LevelId };

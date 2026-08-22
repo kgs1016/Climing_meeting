@@ -149,7 +149,6 @@ export default function Room() {
           <p className="text-[12px] text-muted">
             {hhmm(room.session.starts_at)}~{hhmm(room.session.ends_at)} ·{" "}
             {room.matched}:{room.matched}
-            {room.session.after_meal && " · 🍽 저녁까지 시간 돼요"}
           </p>
         </div>
       </header>

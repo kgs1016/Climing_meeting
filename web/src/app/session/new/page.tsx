@@ -95,7 +95,6 @@ export default function NewSession() {
   const [ageMin, setAgeMin] = useState<number>(27);
   const [ageMax, setAgeMax] = useState<number>(33);
   const [intensity, setIntensity] = useState<"chill" | "hard">("chill");
-  const [afterMeal, setAfterMeal] = useState(false);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -170,7 +169,6 @@ export default function NewSession() {
       ageMin,
       ageMax,
       intensity,
-      afterMeal,
       note,
     });
     setBusy(false);
@@ -311,25 +309,11 @@ export default function NewSession() {
           </div>
         </Field>
 
-        <Field label="뒤풀이">
-          <div className="flex gap-1.5">
-            <Chip active={afterMeal} onClick={() => setAfterMeal(true)}>
-              🍽 저녁까지 시간 돼요
-            </Chip>
-            <Chip active={!afterMeal} onClick={() => setAfterMeal(false)}>
-              클라이밍만
-            </Chip>
-          </div>
-          <p className="mt-1.5 text-[12px] text-muted">
-            약속이 아니라 &ldquo;가능성&rdquo;이에요. 부담 갖지 않아도 돼요
-          </p>
-        </Field>
-
         <Field label="한마디 (선택)">
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="예: 가볍게 타고 맛있는 거 먹어요"
+            placeholder="예: 가볍게 타면서 문제 같이 풀어요"
             className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-[16px] text-ink placeholder:text-muted/60"
           />
         </Field>

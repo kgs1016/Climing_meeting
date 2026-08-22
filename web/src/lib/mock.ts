@@ -18,7 +18,6 @@ export interface Session {
   ageMin: number; // 25 = 20대 중후반 시작점
   ageMax: number;
   intensity: Intensity;
-  afterMeal: boolean;
   note?: string;
   maleJoined: number;
   femaleJoined: number;
@@ -73,7 +72,6 @@ export const MOCK_SESSIONS: Session[] = [
     ageMin: 27,
     ageMax: 33,
     intensity: "chill",
-    afterMeal: true,
     note: "가볍게 타고 맛있는 거 먹어요",
     maleJoined: 2,
     femaleJoined: 1,
@@ -92,7 +90,6 @@ export const MOCK_SESSIONS: Session[] = [
     ageMin: 24,
     ageMax: 29,
     intensity: "chill",
-    afterMeal: false,
     note: "볼더링 처음이어도 환영! 같이 워밍업부터",
     maleJoined: 1,
     femaleJoined: 1,
@@ -111,7 +108,6 @@ export const MOCK_SESSIONS: Session[] = [
     ageMin: 28,
     ageMax: 36,
     intensity: "hard",
-    afterMeal: true,
     maleJoined: 2,
     femaleJoined: 2,
     status: "confirmed",
@@ -130,7 +126,6 @@ export const MOCK_SESSIONS: Session[] = [
     ageMin: 25,
     ageMax: 32,
     intensity: "chill",
-    afterMeal: false,
     note: "퇴근하고 한 판!",
     maleJoined: 0,
     femaleJoined: 1,

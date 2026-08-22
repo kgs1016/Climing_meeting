@@ -23,6 +23,16 @@ export default function SessionCard({
 }) {
   const left = slotsLeft(s);
   const full = left.male <= 0 && left.female <= 0;
+  /* 이미 신청했거나 내가 연 모임이면 목록에서부터 누를 일이 없다.
+     cancelled 는 취소한 것이므로 다시 신청할 수 있어야 한다. */
+  const mine =
+    s.iAmHost
+      ? "내가 연 모임"
+      : s.myStatus === "waiting"
+        ? "승인 대기중"
+        : s.myStatus === "confirmed"
+          ? "참여 중"
+          : null;
 
   return (
     <Link
@@ -101,13 +111,14 @@ export default function SessionCard({
             <span className="text-muted"> 남음</span>
           </span>
         )}
-        {/* 내가 연 모임에는 신청할 수 없다 — 목록에서부터 눌러볼 일이 없게 */}
+        {/* 내 모임·신청한 모임은 마감보다 앞선다 — 확정된 자리가 "마감" 으로
+            보이면 내가 못 들어간 것처럼 읽힌다 */}
         <span
           className={`rounded-lg px-3.5 py-1.5 text-[13px] font-bold ${
-            s.iAmHost || full ? "bg-surface2 text-muted" : "bg-accent text-white"
+            mine || full ? "bg-surface2 text-muted" : "bg-accent text-white"
           }`}
         >
-          {s.iAmHost ? "내가 연 모임" : full ? "마감" : "참여 신청"}
+          {mine ?? (full ? "마감" : "참여 신청")}
         </span>
       </div>
     </Link>

@@ -488,7 +488,7 @@ export default function SessionDetail() {
           ? "내가 연 모임이에요"
           : joined
             ? s.myStatus !== "confirmed"
-              ? "대기 중 · 자리가 나면 자동 확정"
+              ? "승인 대기 중 · 호스트가 확인하면 알려드려요"
               : s.status === "confirmed"
                 ? "✓ 모임이 확정됐어요"
                 : "✓ 자리 잡았어요 · 성비가 맞으면 확정돼요"

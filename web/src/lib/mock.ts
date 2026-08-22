@@ -32,6 +32,9 @@ export interface Session {
   iAmHost?: boolean;
   earlyConfirmAt?: string | null;
   myAck?: boolean;
+  /* 이 모임에 대한 내 신청 상태 — waiting · confirmed · cancelled.
+     신청한 적이 없으면 null. 목록 카드가 버튼을 끄는 데 쓴다. */
+  myStatus?: string | null;
 }
 
 export interface SessionHost {

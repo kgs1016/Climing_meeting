@@ -832,6 +832,7 @@ export const CREDIT_LABELS: Record<string, string> = {
   request_refund: "↩️ 관심 반환",
   session_join: "🧗 모임 신청",
   session_refund: "↩️ 모임 신청 반환",
+  admin_grant: "🛠 운영자 지급",
   // 아래 둘은 로테이션 시절 적립. 지난 원장을 읽으려면 이름이 필요하다.
   mission_video: "🎥 영상 미션",
   mission_done: "✅ 미션 완료",

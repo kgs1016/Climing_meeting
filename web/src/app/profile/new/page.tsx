@@ -167,8 +167,7 @@ export default function ProfileNew() {
     if (!height) return alert("키를 입력해주세요");
     if (Number(height) < 130 || Number(height) > 220)
       return alert("키를 확인해주세요 (130~220cm)");
-    if (!mbti) return alert("MBTI를 선택해주세요");
-    // 동네·홈짐은 선택 — 채우고 싶은 사람만
+    // 동네·홈짐·MBTI 는 선택 — 채우고 싶은 사람만
 
     const profile = buildProfile();
 
@@ -379,13 +378,13 @@ export default function ProfileNew() {
           />
         </Field>
 
-        <Field label="MBTI">
+        <Field label="MBTI (선택)">
           <select
             value={mbti}
             onChange={(e) => setMbti(e.target.value)}
             className={inputCls}
           >
-            <option value="">선택해주세요</option>
+            <option value="">선택 안 함</option>
             {MBTI.map((m) => (
               <option key={m}>{m}</option>
             ))}
